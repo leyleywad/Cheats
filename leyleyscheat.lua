@@ -38,26 +38,37 @@ local function GenerateSuffixes()
     end
     SuffixDict["centillion"] = index
     SuffixDict["quattuotrigintillion"] = SuffixDict["quattuortrigintillion"]
+    
+    -- Raccourcis et pluriels au cas où
+    SuffixDict["k"] = 1; SuffixDict["m"] = 2; SuffixDict["b"] = 3; SuffixDict["t"] = 4
+    SuffixDict["thousands"] = 1; SuffixDict["millions"] = 2; SuffixDict["billions"] = 3; SuffixDict["trillions"] = 4
 end
 
 GenerateSuffixes()
 
 local function ParsePrice(str)
-    if not str then return 0 end
+    if not str then return math.huge end
     str = string.lower(tostring(str))
     
     if string.match(str, "free") or string.match(str, "gratuit") then 
         return 0 
     end
     
-    str = string.gsub(str, "[$%,]", "") 
-    local numStr, suffix = string.match(str, "([%d%.]+)%s*(%a*)")
-    local num = tonumber(numStr) or 0
+    -- On retire le $, les virgules, ET les espaces pour coller le chiffre et la lettre
+    str = string.gsub(str, "[$%,%s]", "") 
+    
+    local numStr, suffix = string.match(str, "([%d%.]+)(%a*)")
+    local num = tonumber(numStr)
+    
+    if not num then return math.huge end
     
     if suffix and suffix ~= "" then
         local powerIndex = SuffixDict[suffix]
         if powerIndex then
             num = num * (10 ^ (powerIndex * 3))
+        else
+            warn("[AutoBuy] Suffixe inconnu détecté : '" .. suffix .. "' (Prix ignoré : " .. str .. ")")
+            num = math.huge -- Si on ne connait pas, on le met infiniment cher pour éviter l'erreur !
         end
     end
     return num
@@ -587,7 +598,7 @@ task.spawn(function()
             end)
         end
         
-             if SolaraManager.IsAutoBuying and char and hrp then
+                    if SolaraManager.IsAutoBuying and char and hrp then
             pcall(function()
                 local targetOwnerName = SolaraManager.TargetTycoonOwner
                 if targetOwnerName == "" then 
@@ -620,7 +631,6 @@ task.spawn(function()
                     local buttonsToBuy = {}
                     local targetCategories = {Structure = true, Other = true, Multiplier = true}
                     
-                    -- Fonction locale pour éviter de répéter le code de lecture du prix
                     local function ProcessButtonModel(buttonModel)
                         local buttonPart = buttonModel:FindFirstChild("Button")
                         if buttonPart and buttonPart:IsA("BasePart") then
@@ -638,16 +648,18 @@ task.spawn(function()
                                     
                                     local priceMagObj = guiFolder:FindFirstChild("PriceMag")
                                     if priceMagObj then
+                                        local magText = ""
                                         if priceMagObj:IsA("TextLabel") or priceMagObj:IsA("TextBox") or priceMagObj:IsA("TextButton") then
-                                            rawPrice = rawPrice .. " " .. priceMagObj.Text
+                                            magText = priceMagObj.Text
                                         elseif priceMagObj:IsA("ValueBase") then
-                                            rawPrice = rawPrice .. " " .. tostring(priceMagObj.Value)
+                                            magText = tostring(priceMagObj.Value)
                                         end
+                                        rawPrice = rawPrice .. magText
                                     end
                                     
                                     local numPrice = ParsePrice(rawPrice)
                                     
-                                    if numPrice >= 0 then
+                                    if numPrice >= 0 and numPrice ~= math.huge then
                                         table.insert(buttonsToBuy, {
                                             Part = buttonPart,
                                             Price = numPrice,
@@ -665,12 +677,10 @@ task.spawn(function()
                             if buttonsFolder then
                                 for _, child in ipairs(buttonsFolder:GetChildren()) do
                                     if targetCategories[child.Name] then
-                                        -- C'est un dossier (Structure, Other, Multiplier), on lit ses modèles
                                         for _, buttonModel in ipairs(child:GetChildren()) do
                                             ProcessButtonModel(buttonModel)
                                         end
                                     elseif child:IsA("Model") then
-                                        -- C'est directement un modèle (enfant de Buttons), on le lit
                                         ProcessButtonModel(child)
                                     end
                                 end
