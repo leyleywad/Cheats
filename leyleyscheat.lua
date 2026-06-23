@@ -587,7 +587,7 @@ task.spawn(function()
             end)
         end
         
-        if SolaraManager.IsAutoBuying and char and hrp then
+       if SolaraManager.IsAutoBuying and char and hrp then
             pcall(function()
                 local targetOwnerName = SolaraManager.TargetTycoonOwner
                 if targetOwnerName == "" then 
