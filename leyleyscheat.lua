@@ -653,6 +653,8 @@ task.spawn(function()
                     TycoonStatusLbl.Text = "Status: Scanning buttons..."
                     local purchasesFolder = SolaraManager.MyTycoon:FindFirstChild("Purchases")
                     local buttonsToBuy = {}
+                    
+                    -- AJOUT DE "Multipliers" AVEC UN "S" ICI
                     local targetCategories = {Structure = true, Other = true, Multiplier = true, Multipliers = true}
                     
                     local function ProcessButtonModel(buttonModel)
@@ -715,7 +717,6 @@ task.spawn(function()
                             
                             -- 2. Cas spécifique : Dossier "Hills"
                             if structureFolder.Name == "Hills" then
-                                -- Recherche récursive profonde pour ne louper AUCUN bouton
                                 for _, desc in ipairs(structureFolder:GetDescendants()) do
                                     if desc:IsA("Model") and desc:FindFirstChild("Button") then
                                         ProcessButtonModel(desc)
