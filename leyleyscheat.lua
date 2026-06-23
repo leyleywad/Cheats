@@ -1,6 +1,6 @@
---[[ Leyley's cheat V24 ]]--
+--[[ Leyley's cheat V25 ]]--
 
-print("Leyley's cheat V24 loaded")
+print("Leyley's cheat V25 loaded")
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -37,6 +37,7 @@ local function GenerateSuffixes()
         end
     end
     SuffixDict["centillion"] = index
+    SuffixDict["quattuotrigintillion"] = SuffixDict["quattuortrigintillion"]
 end
 
 GenerateSuffixes()
@@ -63,7 +64,7 @@ local function ParsePrice(str)
 end
 
 local SolaraManager = {
-    GuiName = "LeyleysCheat_V24",
+    GuiName = "LeyleysCheat_V25",
     ActiveTab = "Game",
     CurrentTheme = Themes.Default,
     
@@ -74,7 +75,7 @@ local SolaraManager = {
     JumpOverride = nil,
     SelectedTarget = nil,
     
-    ActiveGameConfig = "AutoTycoon",
+    ActiveGameConfig = "TycoonLemon",
     
     IsAutoBuying = false,
     MyTycoon = nil,
@@ -462,45 +463,38 @@ local function SwitchGameConfig(gameName)
     SolaraManager.ActiveGameConfig = gameName
 end
 
-local TycoonConfig = Instance.new("Frame", GameContentFrame)
-TycoonConfig.Size = UDim2.new(1, 0, 1, 0)
-TycoonConfig.BackgroundTransparency = 1
-GameConfigs["AutoTycoon"] = TycoonConfig
+local TycoonLemonScroll = Instance.new("ScrollingFrame", GameContentFrame)
+TycoonLemonScroll.Size = UDim2.new(1, 0, 1, 0)
+TycoonLemonScroll.BackgroundTransparency = 1
+TycoonLemonScroll.ScrollBarThickness = 4
+GameConfigs["TycoonLemon"] = TycoonLemonScroll
 
-CreateLabel(TycoonConfig, "TycoonTitle", "🏭 TYCOON AUTO BUY", UDim2.new(1,0,0.15,0), UDim2.new(0,0,0,0))
-local TycoonStatusLbl = CreateLabel(TycoonConfig, "TycoonStatusLbl", "Status: Idle", UDim2.new(1,0,0.1,0), UDim2.new(0,0,0.15,0))
-TycoonStatusLbl.Font = Enum.Font.Gotham
+local TL_Layout = Instance.new("UIListLayout", TycoonLemonScroll)
+TL_Layout.Padding = UDim.new(0, 10)
+TL_Layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+TL_Layout.SortOrder = Enum.SortOrder.LayoutOrder
 
-local TycoonOwnerInput = CreateInput(TycoonConfig, "TycoonOwnerInput", "Tycoon Owner (Leave empty for You)", UDim2.new(0.8,0,0.15,0), UDim2.new(0.1,0,0.3,0))
-
-local AutoBuyBtn, _ = CreateButton(TycoonConfig, "AutoBuyBtn", "Auto Buy: OFF", UDim2.new(0.8,0,0.2,0), UDim2.new(0.1,0,0.5,0), SolaraManager.CurrentTheme.Danger)
-AutoBuyBtn.MouseButton1Click:Connect(function()
-    SolaraManager.TargetTycoonOwner = TycoonOwnerInput.Text
-    SolaraManager.IsAutoBuying = not SolaraManager.IsAutoBuying
-    AutoBuyBtn.Text = SolaraManager.IsAutoBuying and "Auto Buy: ON" or "Auto Buy: OFF"
-    ApplyTween(AutoBuyBtn, {BackgroundColor3 = SolaraManager.IsAutoBuying and SolaraManager.CurrentTheme.Success or SolaraManager.CurrentTheme.Danger})
-    
-    if not SolaraManager.IsAutoBuying then 
-        TycoonStatusLbl.Text = "Status: Idle" 
-    end
+TL_Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    TycoonLemonScroll.CanvasSize = UDim2.new(0, 0, 0, TL_Layout.AbsoluteContentSize.Y + 20)
 end)
 
-local LemonConfig = Instance.new("Frame", GameContentFrame)
-LemonConfig.Size = UDim2.new(1, 0, 1, 0)
-LemonConfig.BackgroundTransparency = 1
-LemonConfig.Visible = false
-GameConfigs["LemonFarm"] = LemonConfig
-
-CreateLabel(LemonConfig, "GameTitle", "🍋 LEMON FARM", UDim2.new(1,0,0.15,0), UDim2.new(0,0,0,0))
-local FarmStatusLbl = CreateLabel(LemonConfig, "StatusLbl", "Status: Idle", UDim2.new(1,0,0.1,0), UDim2.new(0,0,0.15,0))
+local LemonTitle = CreateLabel(TycoonLemonScroll, "LemonTitle", "🍋 LEMON FARM", UDim2.new(1,0,0,30), UDim2.new())
+LemonTitle.LayoutOrder = 1
+local FarmStatusLbl = CreateLabel(TycoonLemonScroll, "FarmStatusLbl", "Status: Idle", UDim2.new(1,0,0,20), UDim2.new())
 FarmStatusLbl.Font = Enum.Font.Gotham
-
-local ScanTimerLbl = CreateLabel(LemonConfig, "ScanTimerLbl", "Next Scan: --", UDim2.new(1,0,0.1,0), UDim2.new(0,0,0.25,0))
+FarmStatusLbl.LayoutOrder = 2
+local ScanTimerLbl = CreateLabel(TycoonLemonScroll, "ScanTimerLbl", "Next Scan: --", UDim2.new(1,0,0,20), UDim2.new())
 ScanTimerLbl.Font = Enum.Font.Gotham
 ScanTimerLbl.TextColor3 = Color3.fromRGB(150,150,150)
+ScanTimerLbl.LayoutOrder = 3
 
-local FarmSpeedInput = CreateInput(LemonConfig, "FarmSpeedInput", "Fruits/sec (Max 4)", UDim2.new(0.4,0,0.15,0), UDim2.new(0.1,0,0.4,0))
-local FarmSpeedBtn, _ = CreateButton(LemonConfig, "FarmSpeedBtn", "Apply Speed", UDim2.new(0.4,0,0.15,0), UDim2.new(0.55,0,0.4,0), SolaraManager.CurrentTheme.Accent)
+local SpeedFrame = Instance.new("Frame", TycoonLemonScroll)
+SpeedFrame.Size = UDim2.new(0.9, 0, 0, 35)
+SpeedFrame.BackgroundTransparency = 1
+SpeedFrame.LayoutOrder = 4
+
+local FarmSpeedInput = CreateInput(SpeedFrame, "FarmSpeedInput", "Fruits/sec (Max 4)", UDim2.new(0.5,0,1,0), UDim2.new(0,0,0,0))
+local FarmSpeedBtn, _ = CreateButton(SpeedFrame, "FarmSpeedBtn", "Apply Speed", UDim2.new(0.45,0,1,0), UDim2.new(0.55,0,0,0), SolaraManager.CurrentTheme.Accent)
 FarmSpeedBtn.MouseButton1Click:Connect(function()
     local val = tonumber(FarmSpeedInput.Text)
     if val and val > 0 then
@@ -514,7 +508,8 @@ FarmSpeedBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-local FarmBtn, _ = CreateButton(LemonConfig, "FarmBtn", "Auto Farm: OFF", UDim2.new(0.8,0,0.2,0), UDim2.new(0.1,0,0.6,0), SolaraManager.CurrentTheme.Danger)
+local FarmBtn, _ = CreateButton(TycoonLemonScroll, "FarmBtn", "Auto Farm: OFF", UDim2.new(0.9,0,0,40), UDim2.new(), SolaraManager.CurrentTheme.Danger)
+FarmBtn.LayoutOrder = 5
 FarmBtn.MouseButton1Click:Connect(function()
     SolaraManager.IsFarmingLemons = not SolaraManager.IsFarmingLemons
     FarmBtn.Text = SolaraManager.IsFarmingLemons and "Auto Farm: ON" or "Auto Farm: OFF"
@@ -527,6 +522,35 @@ FarmBtn.MouseButton1Click:Connect(function()
     end
 end)
 
+local Divider = Instance.new("Frame", TycoonLemonScroll)
+Divider.Size = UDim2.new(0.8, 0, 0, 2)
+Divider.BackgroundColor3 = SolaraManager.CurrentTheme.Stroke
+Divider.BorderSizePixel = 0
+Divider.LayoutOrder = 6
+table.insert(SolaraManager.ThemeObjects.Strokes, Divider)
+
+local TycoonTitle = CreateLabel(TycoonLemonScroll, "TycoonTitle", "🏭 TYCOON AUTO BUY", UDim2.new(1,0,0,30), UDim2.new())
+TycoonTitle.LayoutOrder = 7
+local TycoonStatusLbl = CreateLabel(TycoonLemonScroll, "TycoonStatusLbl", "Status: Idle", UDim2.new(1,0,0,20), UDim2.new())
+TycoonStatusLbl.Font = Enum.Font.Gotham
+TycoonStatusLbl.LayoutOrder = 8
+
+local TycoonOwnerInput = CreateInput(TycoonLemonScroll, "TycoonOwnerInput", "Tycoon Owner (Empty = You)", UDim2.new(0.9,0,0,35), UDim2.new())
+TycoonOwnerInput.LayoutOrder = 9
+
+local AutoBuyBtn, _ = CreateButton(TycoonLemonScroll, "AutoBuyBtn", "Auto Buy: OFF", UDim2.new(0.9,0,0,40), UDim2.new(), SolaraManager.CurrentTheme.Danger)
+AutoBuyBtn.LayoutOrder = 10
+AutoBuyBtn.MouseButton1Click:Connect(function()
+    SolaraManager.TargetTycoonOwner = TycoonOwnerInput.Text
+    SolaraManager.IsAutoBuying = not SolaraManager.IsAutoBuying
+    AutoBuyBtn.Text = SolaraManager.IsAutoBuying and "Auto Buy: ON" or "Auto Buy: OFF"
+    ApplyTween(AutoBuyBtn, {BackgroundColor3 = SolaraManager.IsAutoBuying and SolaraManager.CurrentTheme.Success or SolaraManager.CurrentTheme.Danger})
+    
+    if not SolaraManager.IsAutoBuying then 
+        TycoonStatusLbl.Text = "Status: Idle" 
+    end
+end)
+
 local SoonConfig = Instance.new("Frame", GameContentFrame)
 SoonConfig.Size = UDim2.new(1, 0, 1, 0)
 SoonConfig.BackgroundTransparency = 1
@@ -536,17 +560,14 @@ GameConfigs["ComingSoon"] = SoonConfig
 CreateLabel(SoonConfig, "SoonTitle", "🚧 COMING SOON", UDim2.new(1,0,0.15,0), UDim2.new(0,0,0,0))
 CreateLabel(SoonConfig, "SoonDesc", "Next game script will go here.", UDim2.new(1,0,0.15,0), UDim2.new(0,0,0.2,0)).Font = Enum.Font.Gotham
 
-local TycoonBtn, _ = CreateButton(GameSidebar, "TycoonBtn", "Auto Tycoon", UDim2.new(0.95,0,0,30), UDim2.new(), nil, "Panel")
-TycoonBtn.MouseButton1Click:Connect(function() SwitchGameConfig("AutoTycoon") end)
-
-local LemonBtn, _ = CreateButton(GameSidebar, "LemonBtn", "Lemon Farm", UDim2.new(0.95,0,0,30), UDim2.new(), nil, "Panel")
-LemonBtn.MouseButton1Click:Connect(function() SwitchGameConfig("LemonFarm") end)
+local TycoonLemonBtn, _ = CreateButton(GameSidebar, "TycoonLemonBtn", "Tycoon & Farm", UDim2.new(0.95,0,0,30), UDim2.new(), nil, "Panel")
+TycoonLemonBtn.MouseButton1Click:Connect(function() SwitchGameConfig("TycoonLemon") end)
 
 local SoonBtn, _ = CreateButton(GameSidebar, "SoonBtn", "Coming Soon", UDim2.new(0.95,0,0,30), UDim2.new(), nil, "Panel")
 SoonBtn.MouseButton1Click:Connect(function() SwitchGameConfig("ComingSoon") end)
 
 SwitchTab("Game")
-SwitchGameConfig("AutoTycoon")
+SwitchGameConfig("TycoonLemon")
 
 task.spawn(function()
     while ScreenGui.Parent do
@@ -618,6 +639,15 @@ task.spawn(function()
                                                             rawPrice = priceObj.Text
                                                         elseif priceObj:IsA("ValueBase") then
                                                             rawPrice = tostring(priceObj.Value)
+                                                        end
+                                                        
+                                                        local priceMagObj = guiFolder:FindFirstChild("PriceMag")
+                                                        if priceMagObj then
+                                                            if priceMagObj:IsA("TextLabel") or priceMagObj:IsA("TextBox") or priceMagObj:IsA("TextButton") then
+                                                                rawPrice = rawPrice .. " " .. priceMagObj.Text
+                                                            elseif priceMagObj:IsA("ValueBase") then
+                                                                rawPrice = rawPrice .. " " .. tostring(priceMagObj.Value)
+                                                            end
                                                         end
                                                         
                                                         local numPrice = ParsePrice(rawPrice)
