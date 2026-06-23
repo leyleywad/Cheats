@@ -1,6 +1,6 @@
---[[ Leyley's cheat V29 ]]--
+--[[ Leyley's cheat V30 ]]--
 
-print("Leyley's cheat V29 loaded")
+print("Leyley's cheat V30 loaded")
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -673,6 +673,7 @@ task.spawn(function()
 
                     if purchasesFolder then
                         for _, structureFolder in ipairs(purchasesFolder:GetChildren()) do
+                            
                             local buttonsFolder = structureFolder:FindFirstChild("Buttons")
                             if buttonsFolder then
                                 for _, child in ipairs(buttonsFolder:GetChildren()) do
@@ -685,6 +686,19 @@ task.spawn(function()
                                     end
                                 end
                             end
+                            
+                            if structureFolder.Name == "Hills" then
+                                for _, child in ipairs(structureFolder:GetChildren()) do
+                                    ProcessButtonModel(child)
+                                    
+                                    for _, subChild in ipairs(child:GetChildren()) do
+                                        if subChild:IsA("Model") or subChild:IsA("Folder") then
+                                            ProcessButtonModel(subChild)
+                                        end
+                                    end
+                                end
+                            end
+                            
                         end
                     end
                     
