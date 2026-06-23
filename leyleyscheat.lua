@@ -1,6 +1,6 @@
---[[ Leyley's cheat V5.0 ]]--
+--[[ Leyley's cheat V5.1 ]]--
 
-print("Leyley's cheat V5.0 loaded")
+print("Leyley's cheat V5.1 loaded")
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -23,25 +23,45 @@ local function GenerateSuffixes()
     local units = {"un", "duo", "tre", "quattuor", "quin", "sex", "septen", "octo", "novem"}
     local tens = {"decillion", "vigintillion", "trigintillion", "quadragintillion", "quinquagintillion", "sexagintillion", "septuagintillion", "octogintillion", "nonagintillion"}
     
+    -- Puissances de base
     for i, name in ipairs(order) do
         SuffixDict[name] = i 
+        SuffixDict[name.."s"] = i -- Support du pluriel
     end
     
     local index = 11
     for _, t in ipairs(tens) do
         SuffixDict[t] = index
+        SuffixDict[t.."s"] = index
         index = index + 1
+        
         for _, u in ipairs(units) do
-            SuffixDict[u..t] = index
+            local combined = u..t
+            SuffixDict[combined] = index
+            SuffixDict[combined.."s"] = index
+            
+            -- ALIAS SPECIFIQUES (Fautes de frappes des devs de jeux)
+            if u == "tre" then
+                SuffixDict["tres"..t] = index      -- Ex: tresvigintillion
+                SuffixDict["tres"..t.."s"] = index
+            elseif u == "quattuor" then
+                SuffixDict["quattuo"..t] = index   -- Ex: quattuotrigintillion
+                SuffixDict["quattuo"..t.."s"] = index
+            elseif u == "septen" then
+                SuffixDict["septem"..t] = index    -- Ex: septemdecillion
+                SuffixDict["sept"..t] = index      -- Ex: septdecillion
+            elseif u == "novem" then
+                SuffixDict["noven"..t] = index     -- Ex: novendecillion
+            end
+            
             index = index + 1
         end
     end
     SuffixDict["centillion"] = index
-    SuffixDict["quattuotrigintillion"] = SuffixDict["quattuortrigintillion"]
+    SuffixDict["centillions"] = index
     
-    -- Raccourcis et pluriels au cas où
+    -- Support des abréviations courtes au cas où
     SuffixDict["k"] = 1; SuffixDict["m"] = 2; SuffixDict["b"] = 3; SuffixDict["t"] = 4
-    SuffixDict["thousands"] = 1; SuffixDict["millions"] = 2; SuffixDict["billions"] = 3; SuffixDict["trillions"] = 4
 end
 
 GenerateSuffixes()
@@ -54,9 +74,10 @@ local function ParsePrice(str)
         return 0 
     end
     
-    -- On retire le $, les virgules, ET les espaces pour coller le chiffre et la lettre
+    -- Nettoyage massif : retire $, virgules, ET espaces
     str = string.gsub(str, "[$%,%s]", "") 
     
+    -- Récupère le chiffre, et les lettres qui le suivent directement
     local numStr, suffix = string.match(str, "([%d%.]+)(%a*)")
     local num = tonumber(numStr)
     
@@ -67,8 +88,8 @@ local function ParsePrice(str)
         if powerIndex then
             num = num * (10 ^ (powerIndex * 3))
         else
-            warn("[AutoBuy] Suffixe inconnu détecté : '" .. suffix .. "' (Prix ignoré : " .. str .. ")")
-            num = math.huge -- Si on ne connait pas, on le met infiniment cher pour éviter l'erreur !
+            warn("[AutoBuy] ERREUR LECTURE - Suffixe ignoré : '" .. suffix .. "' (Prix de base: " .. tostring(str) .. ")")
+            num = math.huge -- On le met hors de prix pour ne pas se TP dessus par erreur
         end
     end
     return num
