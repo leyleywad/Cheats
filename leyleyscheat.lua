@@ -20,47 +20,40 @@ local SuffixDict = {}
 
 local function GenerateSuffixes()
     local order = {"thousand", "million", "billion", "trillion", "quadrillion", "quintillion", "sextillion", "septillion", "octillion", "nonillion"}
-    local units = {"un", "duo", "tre", "quattuor", "quin", "sex", "septen", "octo", "novem"}
-    local tens = {"decillion", "vigintillion", "trigintillion", "quadragintillion", "quinquagintillion", "sexagintillion", "septuagintillion", "octogintillion", "nonagintillion"}
-    
-    -- Puissances de base
     for i, name in ipairs(order) do
         SuffixDict[name] = i 
-        SuffixDict[name.."s"] = i -- Support du pluriel
+        SuffixDict[name.."s"] = i -- Gère les pluriels
     end
     
-    local index = 11
-    for _, t in ipairs(tens) do
-        SuffixDict[t] = index
-        SuffixDict[t.."s"] = index
-        index = index + 1
-        
-        for _, u in ipairs(units) do
-            local combined = u..t
-            SuffixDict[combined] = index
-            SuffixDict[combined.."s"] = index
-            
-            -- ALIAS SPECIFIQUES (Fautes de frappes des devs de jeux)
-            if u == "tre" then
-                SuffixDict["tres"..t] = index      -- Ex: tresvigintillion
-                SuffixDict["tres"..t.."s"] = index
-            elseif u == "quattuor" then
-                SuffixDict["quattuo"..t] = index   -- Ex: quattuotrigintillion
-                SuffixDict["quattuo"..t.."s"] = index
-            elseif u == "septen" then
-                SuffixDict["septem"..t] = index    -- Ex: septemdecillion
-                SuffixDict["sept"..t] = index      -- Ex: septdecillion
-            elseif u == "novem" then
-                SuffixDict["noven"..t] = index     -- Ex: novendecillion
-            end
-            
-            index = index + 1
+    -- Assignation directe et précise des dizaines
+    local tensDict = {
+        ["decillion"] = 11, ["vigintillion"] = 21, ["trigintillion"] = 31, 
+        ["quadragintillion"] = 41, ["quinquagintillion"] = 51, 
+        ["sexagintillion"] = 61, ["septuagintillion"] = 71, 
+        ["octogintillion"] = 81, ["nonagintillion"] = 91
+    }
+    
+    -- Toutes les variantes orthographiques possibles pour les unités
+    local unitsPrefix = {
+        ["un"] = 1, ["duo"] = 2, ["tre"] = 3, ["tres"] = 3, 
+        ["quattuor"] = 4, ["quattuo"] = 4, ["quin"] = 5, ["quinqua"] = 5,
+        ["sex"] = 6, ["ses"] = 6, ["septen"] = 7, ["septem"] = 7, ["sept"] = 7, 
+        ["octo"] = 8, ["novem"] = 9, ["noven"] = 9
+    }
+    
+    for tName, tVal in pairs(tensDict) do
+        SuffixDict[tName] = tVal
+        SuffixDict[tName.."s"] = tVal
+        for uName, uVal in pairs(unitsPrefix) do
+            SuffixDict[uName..tName] = tVal + uVal
+            SuffixDict[uName..tName.."s"] = tVal + uVal
         end
     end
-    SuffixDict["centillion"] = index
-    SuffixDict["centillions"] = index
     
-    -- Support des abréviations courtes au cas où
+    SuffixDict["centillion"] = 101
+    SuffixDict["centillions"] = 101
+    
+    -- Raccourcis classiques
     SuffixDict["k"] = 1; SuffixDict["m"] = 2; SuffixDict["b"] = 3; SuffixDict["t"] = 4
 end
 
@@ -74,13 +67,22 @@ local function ParsePrice(str)
         return 0 
     end
     
-    -- Nettoyage massif : retire $, virgules, ET espaces
-    str = string.gsub(str, "[$%,%s]", "") 
+    -- Test si le jeu utilise la vraie notation scientifique (ex: 1.5e24)
+    local sciNum = tonumber(str)
+    if sciNum then return sciNum end
     
-    -- Récupère le chiffre, et les lettres qui le suivent directement
-    local numStr, suffix = string.match(str, "([%d%.]+)(%a*)")
+    -- Nettoyage absolu : on retire tout ce qui n'est pas chiffre, point ou lettre
+    str = string.gsub(str, "[^%d%.%a]", "") 
+    
+    -- Extraction stricte du chiffre et du suffixe
+    local numStr, suffix = string.match(str, "^([%d%.]+)(%a*)$")
+    
+    if not numStr then 
+        warn("[AutoBuy] PRIX IGNORE (Aucun chiffre détecté) : '" .. tostring(str) .. "'")
+        return math.huge
+    end
+    
     local num = tonumber(numStr)
-    
     if not num then return math.huge end
     
     if suffix and suffix ~= "" then
@@ -88,10 +90,11 @@ local function ParsePrice(str)
         if powerIndex then
             num = num * (10 ^ (powerIndex * 3))
         else
-            warn("[AutoBuy] ERREUR LECTURE - Suffixe ignoré : '" .. suffix .. "' (Prix de base: " .. tostring(str) .. ")")
-            num = math.huge -- On le met hors de prix pour ne pas se TP dessus par erreur
+            warn("[AutoBuy] SUFFIXE INCONNU (Prix ignoré) : '" .. suffix .. "' détecté dans : " .. tostring(str))
+            return math.huge
         end
     end
+    
     return num
 end
 
