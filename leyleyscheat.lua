@@ -587,7 +587,7 @@ task.spawn(function()
             end)
         end
         
-       if SolaraManager.IsAutoBuying and char and hrp then
+             if SolaraManager.IsAutoBuying and char and hrp then
             pcall(function()
                 local targetOwnerName = SolaraManager.TargetTycoonOwner
                 if targetOwnerName == "" then 
@@ -620,49 +620,58 @@ task.spawn(function()
                     local buttonsToBuy = {}
                     local targetCategories = {Structure = true, Other = true, Multiplier = true}
                     
+                    -- Fonction locale pour éviter de répéter le code de lecture du prix
+                    local function ProcessButtonModel(buttonModel)
+                        local buttonPart = buttonModel:FindFirstChild("Button")
+                        if buttonPart and buttonPart:IsA("BasePart") then
+                            local guiFolder = buttonPart:FindFirstChild("Gui") or buttonModel:FindFirstChild("Gui")
+                            
+                            if guiFolder then
+                                local priceObj = guiFolder:FindFirstChild("Price")
+                                if priceObj then
+                                    local rawPrice = ""
+                                    if priceObj:IsA("TextLabel") or priceObj:IsA("TextBox") or priceObj:IsA("TextButton") then
+                                        rawPrice = priceObj.Text
+                                    elseif priceObj:IsA("ValueBase") then
+                                        rawPrice = tostring(priceObj.Value)
+                                    end
+                                    
+                                    local priceMagObj = guiFolder:FindFirstChild("PriceMag")
+                                    if priceMagObj then
+                                        if priceMagObj:IsA("TextLabel") or priceMagObj:IsA("TextBox") or priceMagObj:IsA("TextButton") then
+                                            rawPrice = rawPrice .. " " .. priceMagObj.Text
+                                        elseif priceMagObj:IsA("ValueBase") then
+                                            rawPrice = rawPrice .. " " .. tostring(priceMagObj.Value)
+                                        end
+                                    end
+                                    
+                                    local numPrice = ParsePrice(rawPrice)
+                                    
+                                    if numPrice >= 0 then
+                                        table.insert(buttonsToBuy, {
+                                            Part = buttonPart,
+                                            Price = numPrice,
+                                            RawText = rawPrice
+                                        })
+                                    end
+                                end
+                            end
+                        end
+                    end
+
                     if purchasesFolder then
                         for _, structureFolder in ipairs(purchasesFolder:GetChildren()) do
                             local buttonsFolder = structureFolder:FindFirstChild("Buttons")
                             if buttonsFolder then
-                                for _, categoryFolder in ipairs(buttonsFolder:GetChildren()) do
-                                    if targetCategories[categoryFolder.Name] then
-                                        for _, buttonModel in ipairs(categoryFolder:GetChildren()) do
-                                            local buttonPart = buttonModel:FindFirstChild("Button")
-                                            if buttonPart and buttonPart:IsA("BasePart") then
-                                                local guiFolder = buttonPart:FindFirstChild("Gui") or buttonModel:FindFirstChild("Gui")
-                                                
-                                                if guiFolder then
-                                                    local priceObj = guiFolder:FindFirstChild("Price")
-                                                    if priceObj then
-                                                        local rawPrice = ""
-                                                        if priceObj:IsA("TextLabel") or priceObj:IsA("TextBox") or priceObj:IsA("TextButton") then
-                                                            rawPrice = priceObj.Text
-                                                        elseif priceObj:IsA("ValueBase") then
-                                                            rawPrice = tostring(priceObj.Value)
-                                                        end
-                                                        
-                                                        local priceMagObj = guiFolder:FindFirstChild("PriceMag")
-                                                        if priceMagObj then
-                                                            if priceMagObj:IsA("TextLabel") or priceMagObj:IsA("TextBox") or priceMagObj:IsA("TextButton") then
-                                                                rawPrice = rawPrice .. " " .. priceMagObj.Text
-                                                            elseif priceMagObj:IsA("ValueBase") then
-                                                                rawPrice = rawPrice .. " " .. tostring(priceMagObj.Value)
-                                                            end
-                                                        end
-                                                        
-                                                        local numPrice = ParsePrice(rawPrice)
-                                                        
-                                                        if numPrice >= 0 then
-                                                            table.insert(buttonsToBuy, {
-                                                                Part = buttonPart,
-                                                                Price = numPrice,
-                                                                RawText = rawPrice
-                                                            })
-                                                        end
-                                                    end
-                                                end
-                                            end
+                                for _, child in ipairs(buttonsFolder:GetChildren()) do
+                                    if targetCategories[child.Name] then
+                                        -- C'est un dossier (Structure, Other, Multiplier), on lit ses modèles
+                                        for _, buttonModel in ipairs(child:GetChildren()) do
+                                            ProcessButtonModel(buttonModel)
                                         end
+                                    elseif child:IsA("Model") then
+                                        -- C'est directement un modèle (enfant de Buttons), on le lit
+                                        ProcessButtonModel(child)
                                     end
                                 end
                             end
