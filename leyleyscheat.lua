@@ -1,6 +1,6 @@
---[[ Leyley's cheat V23 ]]--
+--[[ Leyley's cheat V24 ]]--
 
-print("Leyley's cheat V23 loaded")
+print("Leyley's cheat V24 loaded")
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -44,8 +44,12 @@ GenerateSuffixes()
 local function ParsePrice(str)
     if not str then return 0 end
     str = string.lower(tostring(str))
-    str = string.gsub(str, "[$%,]", "") 
     
+    if string.match(str, "free") or string.match(str, "gratuit") then 
+        return 0 
+    end
+    
+    str = string.gsub(str, "[$%,]", "") 
     local numStr, suffix = string.match(str, "([%d%.]+)%s*(%a*)")
     local num = tonumber(numStr) or 0
     
@@ -59,7 +63,7 @@ local function ParsePrice(str)
 end
 
 local SolaraManager = {
-    GuiName = "LeyleysCheat_V23",
+    GuiName = "LeyleysCheat_V24",
     ActiveTab = "Game",
     CurrentTheme = Themes.Default,
     
@@ -74,6 +78,7 @@ local SolaraManager = {
     
     IsAutoBuying = false,
     MyTycoon = nil,
+    TargetTycoonOwner = "",
     
     IsFarmingLemons = false,
     FarmSpeed = 2,
@@ -297,7 +302,6 @@ local function BuildTab(name, order)
     PageFrames[name] = Page
     
     TabBtn.MouseButton1Click:Connect(function() SwitchTab(name) end)
-    
     return Page
 end
 
@@ -464,12 +468,14 @@ TycoonConfig.BackgroundTransparency = 1
 GameConfigs["AutoTycoon"] = TycoonConfig
 
 CreateLabel(TycoonConfig, "TycoonTitle", "🏭 TYCOON AUTO BUY", UDim2.new(1,0,0.15,0), UDim2.new(0,0,0,0))
-
 local TycoonStatusLbl = CreateLabel(TycoonConfig, "TycoonStatusLbl", "Status: Idle", UDim2.new(1,0,0.1,0), UDim2.new(0,0,0.15,0))
 TycoonStatusLbl.Font = Enum.Font.Gotham
 
-local AutoBuyBtn, _ = CreateButton(TycoonConfig, "AutoBuyBtn", "Auto Buy: OFF", UDim2.new(0.8,0,0.2,0), UDim2.new(0.1,0,0.3,0), SolaraManager.CurrentTheme.Danger)
+local TycoonOwnerInput = CreateInput(TycoonConfig, "TycoonOwnerInput", "Tycoon Owner (Leave empty for You)", UDim2.new(0.8,0,0.15,0), UDim2.new(0.1,0,0.3,0))
+
+local AutoBuyBtn, _ = CreateButton(TycoonConfig, "AutoBuyBtn", "Auto Buy: OFF", UDim2.new(0.8,0,0.2,0), UDim2.new(0.1,0,0.5,0), SolaraManager.CurrentTheme.Danger)
 AutoBuyBtn.MouseButton1Click:Connect(function()
+    SolaraManager.TargetTycoonOwner = TycoonOwnerInput.Text
     SolaraManager.IsAutoBuying = not SolaraManager.IsAutoBuying
     AutoBuyBtn.Text = SolaraManager.IsAutoBuying and "Auto Buy: ON" or "Auto Buy: OFF"
     ApplyTween(AutoBuyBtn, {BackgroundColor3 = SolaraManager.IsAutoBuying and SolaraManager.CurrentTheme.Success or SolaraManager.CurrentTheme.Danger})
@@ -486,7 +492,6 @@ LemonConfig.Visible = false
 GameConfigs["LemonFarm"] = LemonConfig
 
 CreateLabel(LemonConfig, "GameTitle", "🍋 LEMON FARM", UDim2.new(1,0,0.15,0), UDim2.new(0,0,0,0))
-
 local FarmStatusLbl = CreateLabel(LemonConfig, "StatusLbl", "Status: Idle", UDim2.new(1,0,0.1,0), UDim2.new(0,0,0.15,0))
 FarmStatusLbl.Font = Enum.Font.Gotham
 
@@ -563,12 +568,24 @@ task.spawn(function()
         
         if SolaraManager.IsAutoBuying and char and hrp then
             pcall(function()
+                local targetOwnerName = SolaraManager.TargetTycoonOwner
+                if targetOwnerName == "" then 
+                    targetOwnerName = LocalPlayer.Name 
+                end
+                
                 if not SolaraManager.MyTycoon then
-                    TycoonStatusLbl.Text = "Status: Searching for your Tycoon..."
+                    TycoonStatusLbl.Text = "Status: Searching for Tycoon..."
                     for _, folder in ipairs(workspace:GetChildren()) do
-                        if folder.Name:match("^Tycoon%d+$") then
-                            local ownerVal = folder:FindFirstChild("Owner")
-                            if ownerVal and ownerVal:IsA("ObjectValue") and ownerVal.Value == LocalPlayer then
+                        local ownerVal = folder:FindFirstChild("Owner")
+                        if ownerVal then
+                            local currentOwner = ""
+                            if ownerVal:IsA("ObjectValue") and ownerVal.Value then
+                                currentOwner = ownerVal.Value.Name
+                            elseif ownerVal:IsA("StringValue") then
+                                currentOwner = ownerVal.Value
+                            end
+                            
+                            if string.lower(currentOwner) == string.lower(targetOwnerName) then
                                 SolaraManager.MyTycoon = folder
                                 break
                             end
@@ -591,7 +608,8 @@ task.spawn(function()
                                         for _, buttonModel in ipairs(categoryFolder:GetChildren()) do
                                             local buttonPart = buttonModel:FindFirstChild("Button")
                                             if buttonPart and buttonPart:IsA("BasePart") then
-                                                local guiFolder = buttonModel:FindFirstChild("Gui")
+                                                local guiFolder = buttonPart:FindFirstChild("Gui") or buttonModel:FindFirstChild("Gui")
+                                                
                                                 if guiFolder then
                                                     local priceObj = guiFolder:FindFirstChild("Price")
                                                     if priceObj then
@@ -604,7 +622,7 @@ task.spawn(function()
                                                         
                                                         local numPrice = ParsePrice(rawPrice)
                                                         
-                                                        if numPrice > 0 then
+                                                        if numPrice >= 0 then
                                                             table.insert(buttonsToBuy, {
                                                                 Part = buttonPart,
                                                                 Price = numPrice,
