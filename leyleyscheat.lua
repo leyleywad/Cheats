@@ -1,6 +1,6 @@
---[[ Leyley's cheat V30 ]]--
+--[[ Leyley's cheat V5.0 ]]--
 
-print("Leyley's cheat V30 loaded")
+print("Leyley's cheat V5.0 loaded")
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
