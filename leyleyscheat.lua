@@ -653,7 +653,7 @@ task.spawn(function()
                     TycoonStatusLbl.Text = "Status: Scanning buttons..."
                     local purchasesFolder = SolaraManager.MyTycoon:FindFirstChild("Purchases")
                     local buttonsToBuy = {}
-                    local targetCategories = {Structure = true, Other = true, Multiplier = true}
+                    local targetCategories = {Structure = true, Other = true, Multiplier = true, Multipliers = true}
                     
                     local function ProcessButtonModel(buttonModel)
                         if not buttonModel then return end
