@@ -598,7 +598,7 @@ task.spawn(function()
             end)
         end
         
-                    if SolaraManager.IsAutoBuying and char and hrp then
+        if SolaraManager.IsAutoBuying and char and hrp then
             pcall(function()
                 local targetOwnerName = SolaraManager.TargetTycoonOwner
                 if targetOwnerName == "" then 
@@ -632,6 +632,7 @@ task.spawn(function()
                     local targetCategories = {Structure = true, Other = true, Multiplier = true}
                     
                     local function ProcessButtonModel(buttonModel)
+                        if not buttonModel then return end
                         local buttonPart = buttonModel:FindFirstChild("Button")
                         if buttonPart and buttonPart:IsA("BasePart") then
                             local guiFolder = buttonPart:FindFirstChild("Gui") or buttonModel:FindFirstChild("Gui")
@@ -674,6 +675,7 @@ task.spawn(function()
                     if purchasesFolder then
                         for _, structureFolder in ipairs(purchasesFolder:GetChildren()) do
                             
+                            -- 1. Cas classique (Dossier contenant "Buttons")
                             local buttonsFolder = structureFolder:FindFirstChild("Buttons")
                             if buttonsFolder then
                                 for _, child in ipairs(buttonsFolder:GetChildren()) do
@@ -687,14 +689,12 @@ task.spawn(function()
                                 end
                             end
                             
+                            -- 2. Cas spécifique : Dossier "Hills"
                             if structureFolder.Name == "Hills" then
-                                for _, child in ipairs(structureFolder:GetChildren()) do
-                                    ProcessButtonModel(child)
-                                    
-                                    for _, subChild in ipairs(child:GetChildren()) do
-                                        if subChild:IsA("Model") or subChild:IsA("Folder") then
-                                            ProcessButtonModel(subChild)
-                                        end
+                                -- Recherche récursive profonde pour ne louper AUCUN bouton
+                                for _, desc in ipairs(structureFolder:GetDescendants()) do
+                                    if desc:IsA("Model") and desc:FindFirstChild("Button") then
+                                        ProcessButtonModel(desc)
                                     end
                                 end
                             end
