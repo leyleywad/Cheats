@@ -1,6 +1,6 @@
---[[ Leyley's cheat V5.6 ]]--
+--[[ Leyley's cheat V5.7 ]]--
 
-print("Leyley's cheat V5.6 loaded")
+print("Leyley's cheat V5.7 loaded")
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -91,7 +91,7 @@ local function ParsePrice(str)
 end
 
 local SolaraManager = {
-    GuiName = "LeyleysCheat_V5_6",
+    GuiName = "LeyleysCheat_V5_7",
     ActiveTab = "Game",
     CurrentTheme = Themes.Default,
     
@@ -105,8 +105,8 @@ local SolaraManager = {
     ActiveGameConfig = "SellLemons",
     
     ActiveBuyState = "Off",
+    BuySpeed = 2,
     MyTycoon = nil,
-    TargetTycoonOwner = "",
     
     ActiveFarmState = "Off",
     FarmSpeed = 2,
@@ -558,8 +558,25 @@ local TycoonStatusLbl = CreateLabel(TycoonLemonScroll, "TycoonStatusLbl", "Statu
 TycoonStatusLbl.Font = Enum.Font.Gotham
 TycoonStatusLbl.LayoutOrder = 8
 
-local TycoonOwnerInput = CreateInput(TycoonLemonScroll, "TycoonOwnerInput", "Tycoon Owner (Empty = You)", UDim2.new(0.9,0,0,35), UDim2.new())
-TycoonOwnerInput.LayoutOrder = 9
+local BuySpeedFrame = Instance.new("Frame", TycoonLemonScroll)
+BuySpeedFrame.Size = UDim2.new(0.9, 0, 0, 35)
+BuySpeedFrame.BackgroundTransparency = 1
+BuySpeedFrame.LayoutOrder = 9
+
+local BuySpeedInput = CreateInput(BuySpeedFrame, "BuySpeedInput", "Buys/sec (Max 10)", UDim2.new(0.5,0,1,0), UDim2.new(0,0,0,0))
+local BuySpeedBtn, _ = CreateButton(BuySpeedFrame, "BuySpeedBtn", "Apply Speed", UDim2.new(0.45,0,1,0), UDim2.new(0.55,0,0,0), SolaraManager.CurrentTheme.Accent)
+BuySpeedBtn.MouseButton1Click:Connect(function()
+    local val = tonumber(BuySpeedInput.Text)
+    if val and val > 0 then
+        if val > 10 then val = 10 end
+        SolaraManager.BuySpeed = val
+        BuySpeedBtn.Text = val .. " Buys/s"
+        BuySpeedInput.Text = tostring(val)
+    else
+        SolaraManager.BuySpeed = 2
+        BuySpeedBtn.Text = "Default (2/s)"
+    end
+end)
 
 local BuyActionFrame = Instance.new("Frame", TycoonLemonScroll)
 BuyActionFrame.Size = UDim2.new(0.9, 0, 0, 40)
@@ -607,14 +624,12 @@ SafeFarmBtn.MouseButton1Click:Connect(function()
 end)
 
 AutoBuyBtn.MouseButton1Click:Connect(function()
-    SolaraManager.TargetTycoonOwner = TycoonOwnerInput.Text
     if SolaraManager.ActiveBuyState == "Normal" then SolaraManager.ActiveBuyState = "Off"
     else SolaraManager.ActiveBuyState = "Normal"; SolaraManager.ActiveFarmState = "Off" end
     UpdateActionUI()
 end)
 
 SafeBuyBtn.MouseButton1Click:Connect(function()
-    SolaraManager.TargetTycoonOwner = TycoonOwnerInput.Text
     if SolaraManager.ActiveBuyState == "Safe" then SolaraManager.ActiveBuyState = "Off"
     else SolaraManager.ActiveBuyState = "Safe"; SolaraManager.ActiveFarmState = "Off" end
     SolaraManager.HasSafetyRespawned = false
@@ -683,10 +698,7 @@ task.spawn(function()
             
             if SolaraManager.ActiveBuyState ~= "Off" and char and hrp then
                 pcall(function()
-                    local targetOwnerName = SolaraManager.TargetTycoonOwner
-                    if targetOwnerName == "" then 
-                        targetOwnerName = LocalPlayer.Name 
-                    end
+                    local targetOwnerName = LocalPlayer.Name 
                     
                     if not SolaraManager.MyTycoon then
                         TycoonStatusLbl.Text = "Status: Searching for Tycoon..."
@@ -790,7 +802,7 @@ task.spawn(function()
                             hrp.Velocity = Vector3.zero
                             hrp.RotVelocity = Vector3.zero
                             
-                            task.wait(0.5) 
+                            task.wait(1 / SolaraManager.BuySpeed)
                         else
                             TycoonStatusLbl.Text = "Status: No buttons found."
                             task.wait(1)
