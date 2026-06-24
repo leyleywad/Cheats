@@ -1,6 +1,6 @@
---[[ Leyley's cheat V5.3 ]]--
+--[[ Leyley's cheat V5.4 ]]--
 
-print("Leyley's cheat V5.3 loaded")
+print("Leyley's cheat V5.4 loaded")
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -91,7 +91,7 @@ local function ParsePrice(str)
 end
 
 local SolaraManager = {
-    GuiName = "LeyleysCheat_V5_3",
+    GuiName = "LeyleysCheat_V5_4",
     ActiveTab = "Game",
     CurrentTheme = Themes.Default,
     
@@ -664,9 +664,13 @@ task.spawn(function()
             if SolaraManager.ActiveFarmState == "Safe" or SolaraManager.ActiveBuyState == "Safe" then
                 safeModePaused = true
                 if not SolaraManager.HasSafetyRespawned then
-                    if hum then 
-                        hum.Health = 0 
-                        if char then char:BreakJoints() end
+                    pcall(function() LocalPlayer:LoadCharacter() end)
+                    
+                    if char and char:FindFirstChild("Humanoid") then
+                        if char.Humanoid.Health > 0 then
+                            char.Humanoid.Health = 0
+                            char:BreakJoints()
+                        end
                     end
                     SolaraManager.HasSafetyRespawned = true
                 end
