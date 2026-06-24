@@ -1,6 +1,6 @@
---[[ Leyley's cheat V5.1 ]]--
+--[[ Leyley's cheat V5.2 ]]--
 
-print("Leyley's cheat V5.1 loaded")
+print("Leyley's cheat V5.2 loaded")
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -22,10 +22,9 @@ local function GenerateSuffixes()
     local order = {"thousand", "million", "billion", "trillion", "quadrillion", "quintillion", "sextillion", "septillion", "octillion", "nonillion"}
     for i, name in ipairs(order) do
         SuffixDict[name] = i 
-        SuffixDict[name.."s"] = i -- Gère les pluriels
+        SuffixDict[name.."s"] = i 
     end
     
-    -- Assignation directe et précise des dizaines
     local tensDict = {
         ["decillion"] = 11, ["vigintillion"] = 21, ["trigintillion"] = 31, 
         ["quadragintillion"] = 41, ["quinquagintillion"] = 51, 
@@ -33,7 +32,6 @@ local function GenerateSuffixes()
         ["octogintillion"] = 81, ["nonagintillion"] = 91
     }
     
-    -- Toutes les variantes orthographiques possibles pour les unités
     local unitsPrefix = {
         ["un"] = 1, ["duo"] = 2, ["tre"] = 3, ["tres"] = 3, 
         ["quattuor"] = 4, ["quattuo"] = 4, ["quin"] = 5, ["quinqua"] = 5,
@@ -53,7 +51,6 @@ local function GenerateSuffixes()
     SuffixDict["centillion"] = 101
     SuffixDict["centillions"] = 101
     
-    -- Raccourcis classiques
     SuffixDict["k"] = 1; SuffixDict["m"] = 2; SuffixDict["b"] = 3; SuffixDict["t"] = 4
 end
 
@@ -67,18 +64,14 @@ local function ParsePrice(str)
         return 0 
     end
     
-    -- Test si le jeu utilise la vraie notation scientifique (ex: 1.5e24)
     local sciNum = tonumber(str)
     if sciNum then return sciNum end
     
-    -- Nettoyage absolu : on retire tout ce qui n'est pas chiffre, point ou lettre
     str = string.gsub(str, "[^%d%.%a]", "") 
     
-    -- Extraction stricte du chiffre et du suffixe
     local numStr, suffix = string.match(str, "^([%d%.]+)(%a*)$")
     
     if not numStr then 
-        warn("[AutoBuy] PRIX IGNORE (Aucun chiffre détecté) : '" .. tostring(str) .. "'")
         return math.huge
     end
     
@@ -90,7 +83,6 @@ local function ParsePrice(str)
         if powerIndex then
             num = num * (10 ^ (powerIndex * 3))
         else
-            warn("[AutoBuy] SUFFIXE INCONNU (Prix ignoré) : '" .. suffix .. "' détecté dans : " .. tostring(str))
             return math.huge
         end
     end
@@ -99,7 +91,7 @@ local function ParsePrice(str)
 end
 
 local SolaraManager = {
-    GuiName = "LeyleysCheat_V25",
+    GuiName = "LeyleysCheat_V26",
     ActiveTab = "Game",
     CurrentTheme = Themes.Default,
     
@@ -110,13 +102,15 @@ local SolaraManager = {
     JumpOverride = nil,
     SelectedTarget = nil,
     
-    ActiveGameConfig = "TycoonLemon",
+    ActiveGameConfig = "SellLemons",
     
     IsAutoBuying = false,
+    BuySafeMode = false,
     MyTycoon = nil,
     TargetTycoonOwner = "",
     
     IsFarmingLemons = false,
+    FarmSafeMode = false,
     FarmSpeed = 2,
     FarmCache = {}, 
     SpecialCount = 0,
@@ -502,7 +496,7 @@ local TycoonLemonScroll = Instance.new("ScrollingFrame", GameContentFrame)
 TycoonLemonScroll.Size = UDim2.new(1, 0, 1, 0)
 TycoonLemonScroll.BackgroundTransparency = 1
 TycoonLemonScroll.ScrollBarThickness = 4
-GameConfigs["TycoonLemon"] = TycoonLemonScroll
+GameConfigs["SellLemons"] = TycoonLemonScroll
 
 local TL_Layout = Instance.new("UIListLayout", TycoonLemonScroll)
 TL_Layout.Padding = UDim.new(0, 10)
@@ -513,7 +507,7 @@ TL_Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     TycoonLemonScroll.CanvasSize = UDim2.new(0, 0, 0, TL_Layout.AbsoluteContentSize.Y + 20)
 end)
 
-local LemonTitle = CreateLabel(TycoonLemonScroll, "LemonTitle", "🍋 LEMON FARM", UDim2.new(1,0,0,30), UDim2.new())
+local LemonTitle = CreateLabel(TycoonLemonScroll, "LemonTitle", "🍋 SELL LEMONS FARM", UDim2.new(1,0,0,30), UDim2.new())
 LemonTitle.LayoutOrder = 1
 local FarmStatusLbl = CreateLabel(TycoonLemonScroll, "FarmStatusLbl", "Status: Idle", UDim2.new(1,0,0,20), UDim2.new())
 FarmStatusLbl.Font = Enum.Font.Gotham
@@ -543,19 +537,16 @@ FarmSpeedBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-local FarmBtn, _ = CreateButton(TycoonLemonScroll, "FarmBtn", "Auto Farm: OFF", UDim2.new(0.9,0,0,40), UDim2.new(), SolaraManager.CurrentTheme.Danger)
-FarmBtn.LayoutOrder = 5
-FarmBtn.MouseButton1Click:Connect(function()
-    SolaraManager.IsFarmingLemons = not SolaraManager.IsFarmingLemons
-    FarmBtn.Text = SolaraManager.IsFarmingLemons and "Auto Farm: ON" or "Auto Farm: OFF"
-    ApplyTween(FarmBtn, {BackgroundColor3 = SolaraManager.IsFarmingLemons and SolaraManager.CurrentTheme.Success or SolaraManager.CurrentTheme.Danger})
-    
-    if not SolaraManager.IsFarmingLemons then
-        workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
-        FarmStatusLbl.Text = "Status: Idle"
-        ScanTimerLbl.Text = "Next Scan: --"
-    end
-end)
+local ToggleFarm, ToggleBuy
+local FarmBtn, AutoBuyBtn
+
+local FarmActionFrame = Instance.new("Frame", TycoonLemonScroll)
+FarmActionFrame.Size = UDim2.new(0.9, 0, 0, 40)
+FarmActionFrame.BackgroundTransparency = 1
+FarmActionFrame.LayoutOrder = 5
+
+FarmBtn, _ = CreateButton(FarmActionFrame, "FarmBtn", "Auto Farm: OFF", UDim2.new(0.48,0,1,0), UDim2.new(0,0,0,0), SolaraManager.CurrentTheme.Danger)
+local FarmSafeBtn, _ = CreateButton(FarmActionFrame, "FarmSafeBtn", "Safe Mode: OFF", UDim2.new(0.48,0,1,0), UDim2.new(0.52,0,0,0), SolaraManager.CurrentTheme.Danger)
 
 local Divider = Instance.new("Frame", TycoonLemonScroll)
 Divider.Size = UDim2.new(0.8, 0, 0, 2)
@@ -573,17 +564,60 @@ TycoonStatusLbl.LayoutOrder = 8
 local TycoonOwnerInput = CreateInput(TycoonLemonScroll, "TycoonOwnerInput", "Tycoon Owner (Empty = You)", UDim2.new(0.9,0,0,35), UDim2.new())
 TycoonOwnerInput.LayoutOrder = 9
 
-local AutoBuyBtn, _ = CreateButton(TycoonLemonScroll, "AutoBuyBtn", "Auto Buy: OFF", UDim2.new(0.9,0,0,40), UDim2.new(), SolaraManager.CurrentTheme.Danger)
-AutoBuyBtn.LayoutOrder = 10
+local BuyActionFrame = Instance.new("Frame", TycoonLemonScroll)
+BuyActionFrame.Size = UDim2.new(0.9, 0, 0, 40)
+BuyActionFrame.BackgroundTransparency = 1
+BuyActionFrame.LayoutOrder = 10
+
+AutoBuyBtn, _ = CreateButton(BuyActionFrame, "AutoBuyBtn", "Auto Buy: OFF", UDim2.new(0.48,0,1,0), UDim2.new(0,0,0,0), SolaraManager.CurrentTheme.Danger)
+local BuySafeBtn, _ = CreateButton(BuyActionFrame, "BuySafeBtn", "Safe Mode: OFF", UDim2.new(0.48,0,1,0), UDim2.new(0.52,0,0,0), SolaraManager.CurrentTheme.Danger)
+
+ToggleFarm = function(state)
+    SolaraManager.IsFarmingLemons = state
+    FarmBtn.Text = state and "Auto Farm: ON" or "Auto Farm: OFF"
+    ApplyTween(FarmBtn, {BackgroundColor3 = state and SolaraManager.CurrentTheme.Success or SolaraManager.CurrentTheme.Danger})
+    
+    if not state then
+        workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
+        FarmStatusLbl.Text = "Status: Idle"
+        ScanTimerLbl.Text = "Next Scan: --"
+    else
+        if SolaraManager.IsAutoBuying then
+            ToggleBuy(false)
+        end
+    end
+end
+
+ToggleBuy = function(state)
+    SolaraManager.IsAutoBuying = state
+    AutoBuyBtn.Text = state and "Auto Buy: ON" or "Auto Buy: OFF"
+    ApplyTween(AutoBuyBtn, {BackgroundColor3 = state and SolaraManager.CurrentTheme.Success or SolaraManager.CurrentTheme.Danger})
+    
+    if not state then 
+        TycoonStatusLbl.Text = "Status: Idle" 
+    else
+        if SolaraManager.IsFarmingLemons then
+            ToggleFarm(false)
+        end
+    end
+end
+
+FarmBtn.MouseButton1Click:Connect(function() ToggleFarm(not SolaraManager.IsFarmingLemons) end)
 AutoBuyBtn.MouseButton1Click:Connect(function()
     SolaraManager.TargetTycoonOwner = TycoonOwnerInput.Text
-    SolaraManager.IsAutoBuying = not SolaraManager.IsAutoBuying
-    AutoBuyBtn.Text = SolaraManager.IsAutoBuying and "Auto Buy: ON" or "Auto Buy: OFF"
-    ApplyTween(AutoBuyBtn, {BackgroundColor3 = SolaraManager.IsAutoBuying and SolaraManager.CurrentTheme.Success or SolaraManager.CurrentTheme.Danger})
-    
-    if not SolaraManager.IsAutoBuying then 
-        TycoonStatusLbl.Text = "Status: Idle" 
-    end
+    ToggleBuy(not SolaraManager.IsAutoBuying)
+end)
+
+FarmSafeBtn.MouseButton1Click:Connect(function()
+    SolaraManager.FarmSafeMode = not SolaraManager.FarmSafeMode
+    FarmSafeBtn.Text = SolaraManager.FarmSafeMode and "Safe Mode: ON" or "Safe Mode: OFF"
+    ApplyTween(FarmSafeBtn, {BackgroundColor3 = SolaraManager.FarmSafeMode and SolaraManager.CurrentTheme.Success or SolaraManager.CurrentTheme.Danger})
+end)
+
+BuySafeBtn.MouseButton1Click:Connect(function()
+    SolaraManager.BuySafeMode = not SolaraManager.BuySafeMode
+    BuySafeBtn.Text = SolaraManager.BuySafeMode and "Safe Mode: ON" or "Safe Mode: OFF"
+    ApplyTween(BuySafeBtn, {BackgroundColor3 = SolaraManager.BuySafeMode and SolaraManager.CurrentTheme.Success or SolaraManager.CurrentTheme.Danger})
 end)
 
 local SoonConfig = Instance.new("Frame", GameContentFrame)
@@ -595,14 +629,14 @@ GameConfigs["ComingSoon"] = SoonConfig
 CreateLabel(SoonConfig, "SoonTitle", "🚧 COMING SOON", UDim2.new(1,0,0.15,0), UDim2.new(0,0,0,0))
 CreateLabel(SoonConfig, "SoonDesc", "Next game script will go here.", UDim2.new(1,0,0.15,0), UDim2.new(0,0,0.2,0)).Font = Enum.Font.Gotham
 
-local TycoonLemonBtn, _ = CreateButton(GameSidebar, "TycoonLemonBtn", "Tycoon & Farm", UDim2.new(0.95,0,0,30), UDim2.new(), nil, "Panel")
-TycoonLemonBtn.MouseButton1Click:Connect(function() SwitchGameConfig("TycoonLemon") end)
+local TycoonLemonBtn, _ = CreateButton(GameSidebar, "TycoonLemonBtn", "Sell Lemons", UDim2.new(0.95,0,0,30), UDim2.new(), nil, "Panel")
+TycoonLemonBtn.MouseButton1Click:Connect(function() SwitchGameConfig("SellLemons") end)
 
 local SoonBtn, _ = CreateButton(GameSidebar, "SoonBtn", "Coming Soon", UDim2.new(0.95,0,0,30), UDim2.new(), nil, "Panel")
 SoonBtn.MouseButton1Click:Connect(function() SwitchGameConfig("ComingSoon") end)
 
 SwitchTab("Game")
-SwitchGameConfig("TycoonLemon")
+SwitchGameConfig("SellLemons")
 
 task.spawn(function()
     while ScreenGui.Parent do
@@ -623,200 +657,202 @@ task.spawn(function()
         end
         
         if SolaraManager.IsAutoBuying and char and hrp then
-            pcall(function()
-                local targetOwnerName = SolaraManager.TargetTycoonOwner
-                if targetOwnerName == "" then 
-                    targetOwnerName = LocalPlayer.Name 
-                end
-                
-                if not SolaraManager.MyTycoon then
-                    TycoonStatusLbl.Text = "Status: Searching for Tycoon..."
-                    for _, folder in ipairs(workspace:GetChildren()) do
-                        local ownerVal = folder:FindFirstChild("Owner")
-                        if ownerVal then
-                            local currentOwner = ""
-                            if ownerVal:IsA("ObjectValue") and ownerVal.Value then
-                                currentOwner = ownerVal.Value.Name
-                            elseif ownerVal:IsA("StringValue") then
-                                currentOwner = ownerVal.Value
-                            end
-                            
-                            if string.lower(currentOwner) == string.lower(targetOwnerName) then
-                                SolaraManager.MyTycoon = folder
-                                break
-                            end
-                        end
+            if SolaraManager.BuySafeMode and #Players:GetPlayers() > 1 then
+                TycoonStatusLbl.Text = "Status: PAUSED (Player in server)"
+            else
+                pcall(function()
+                    local targetOwnerName = SolaraManager.TargetTycoonOwner
+                    if targetOwnerName == "" then 
+                        targetOwnerName = LocalPlayer.Name 
                     end
-                end
-                
-                if SolaraManager.MyTycoon then
-                    TycoonStatusLbl.Text = "Status: Scanning buttons..."
-                    local purchasesFolder = SolaraManager.MyTycoon:FindFirstChild("Purchases")
-                    local buttonsToBuy = {}
                     
-                    -- AJOUT DE "Multipliers" AVEC UN "S" ICI
-                    local targetCategories = {Structure = true, Other = true, Multiplier = true, Multipliers = true}
-                    
-                    local function ProcessButtonModel(buttonModel)
-                        if not buttonModel then return end
-                        local buttonPart = buttonModel:FindFirstChild("Button")
-                        if buttonPart and buttonPart:IsA("BasePart") then
-                            local guiFolder = buttonPart:FindFirstChild("Gui") or buttonModel:FindFirstChild("Gui")
-                            
-                            if guiFolder then
-                                local priceObj = guiFolder:FindFirstChild("Price")
-                                if priceObj then
-                                    local rawPrice = ""
-                                    if priceObj:IsA("TextLabel") or priceObj:IsA("TextBox") or priceObj:IsA("TextButton") then
-                                        rawPrice = priceObj.Text
-                                    elseif priceObj:IsA("ValueBase") then
-                                        rawPrice = tostring(priceObj.Value)
-                                    end
-                                    
-                                    local priceMagObj = guiFolder:FindFirstChild("PriceMag")
-                                    if priceMagObj then
-                                        local magText = ""
-                                        if priceMagObj:IsA("TextLabel") or priceMagObj:IsA("TextBox") or priceMagObj:IsA("TextButton") then
-                                            magText = priceMagObj.Text
-                                        elseif priceMagObj:IsA("ValueBase") then
-                                            magText = tostring(priceMagObj.Value)
-                                        end
-                                        rawPrice = rawPrice .. magText
-                                    end
-                                    
-                                    local numPrice = ParsePrice(rawPrice)
-                                    
-                                    if numPrice >= 0 and numPrice ~= math.huge then
-                                        table.insert(buttonsToBuy, {
-                                            Part = buttonPart,
-                                            Price = numPrice,
-                                            RawText = rawPrice
-                                        })
-                                    end
+                    if not SolaraManager.MyTycoon then
+                        TycoonStatusLbl.Text = "Status: Searching for Tycoon..."
+                        for _, folder in ipairs(workspace:GetChildren()) do
+                            local ownerVal = folder:FindFirstChild("Owner")
+                            if ownerVal then
+                                local currentOwner = ""
+                                if ownerVal:IsA("ObjectValue") and ownerVal.Value then
+                                    currentOwner = ownerVal.Value.Name
+                                elseif ownerVal:IsA("StringValue") then
+                                    currentOwner = ownerVal.Value
+                                end
+                                
+                                if string.lower(currentOwner) == string.lower(targetOwnerName) then
+                                    SolaraManager.MyTycoon = folder
+                                    break
                                 end
                             end
                         end
                     end
+                    
+                    if SolaraManager.MyTycoon then
+                        TycoonStatusLbl.Text = "Status: Scanning buttons..."
+                        local purchasesFolder = SolaraManager.MyTycoon:FindFirstChild("Purchases")
+                        local buttonsToBuy = {}
+                        local targetCategories = {Structure = true, Other = true, Multiplier = true, Multipliers = true}
+                        
+                        local function ProcessButtonModel(buttonModel)
+                            if not buttonModel then return end
+                            local buttonPart = buttonModel:FindFirstChild("Button")
+                            if buttonPart and buttonPart:IsA("BasePart") then
+                                local guiFolder = buttonPart:FindFirstChild("Gui") or buttonModel:FindFirstChild("Gui")
+                                
+                                if guiFolder then
+                                    local priceObj = guiFolder:FindFirstChild("Price")
+                                    if priceObj then
+                                        local rawPrice = ""
+                                        if priceObj:IsA("TextLabel") or priceObj:IsA("TextBox") or priceObj:IsA("TextButton") then
+                                            rawPrice = priceObj.Text
+                                        elseif priceObj:IsA("ValueBase") then
+                                            rawPrice = tostring(priceObj.Value)
+                                        end
+                                        
+                                        local priceMagObj = guiFolder:FindFirstChild("PriceMag")
+                                        if priceMagObj then
+                                            local magText = ""
+                                            if priceMagObj:IsA("TextLabel") or priceMagObj:IsA("TextBox") or priceMagObj:IsA("TextButton") then
+                                                magText = priceMagObj.Text
+                                            elseif priceMagObj:IsA("ValueBase") then
+                                                magText = tostring(priceMagObj.Value)
+                                            end
+                                            rawPrice = rawPrice .. magText
+                                        end
+                                        
+                                        local numPrice = ParsePrice(rawPrice)
+                                        
+                                        if numPrice >= 0 and numPrice ~= math.huge then
+                                            table.insert(buttonsToBuy, {
+                                                Part = buttonPart,
+                                                Price = numPrice,
+                                                RawText = rawPrice
+                                            })
+                                        end
+                                    end
+                                end
+                            end
+                        end
 
-                    if purchasesFolder then
-                        for _, structureFolder in ipairs(purchasesFolder:GetChildren()) do
-                            
-                            -- 1. Cas classique (Dossier contenant "Buttons")
-                            local buttonsFolder = structureFolder:FindFirstChild("Buttons")
-                            if buttonsFolder then
-                                for _, child in ipairs(buttonsFolder:GetChildren()) do
-                                    if targetCategories[child.Name] then
-                                        for _, buttonModel in ipairs(child:GetChildren()) do
-                                            ProcessButtonModel(buttonModel)
+                        if purchasesFolder then
+                            for _, structureFolder in ipairs(purchasesFolder:GetChildren()) do
+                                local buttonsFolder = structureFolder:FindFirstChild("Buttons")
+                                if buttonsFolder then
+                                    for _, child in ipairs(buttonsFolder:GetChildren()) do
+                                        if targetCategories[child.Name] then
+                                            for _, buttonModel in ipairs(child:GetChildren()) do
+                                                ProcessButtonModel(buttonModel)
+                                            end
+                                        elseif child:IsA("Model") then
+                                            ProcessButtonModel(child)
                                         end
-                                    elseif child:IsA("Model") then
-                                        ProcessButtonModel(child)
+                                    end
+                                end
+                                
+                                if structureFolder.Name == "Hills" then
+                                    for _, desc in ipairs(structureFolder:GetDescendants()) do
+                                        if desc:IsA("Model") and desc:FindFirstChild("Button") then
+                                            ProcessButtonModel(desc)
+                                        end
                                     end
                                 end
                             end
+                        end
+                        
+                        if #buttonsToBuy > 0 then
+                            table.sort(buttonsToBuy, function(a, b) return a.Price < b.Price end)
                             
-                            -- 2. Cas spécifique : Dossier "Hills"
-                            if structureFolder.Name == "Hills" then
-                                for _, desc in ipairs(structureFolder:GetDescendants()) do
-                                    if desc:IsA("Model") and desc:FindFirstChild("Button") then
-                                        ProcessButtonModel(desc)
-                                    end
-                                end
-                            end
+                            local targetButton = buttonsToBuy[1]
+                            TycoonStatusLbl.Text = string.format("Status: Buying item (%s)", targetButton.RawText)
                             
+                            char:PivotTo(targetButton.Part.CFrame * CFrame.new(0, 1, 0))
+                            hrp.Velocity = Vector3.zero
+                            hrp.RotVelocity = Vector3.zero
+                            
+                            task.wait(0.5) 
+                        else
+                            TycoonStatusLbl.Text = "Status: No buttons found."
+                            task.wait(1)
                         end
                     end
-                    
-                    if #buttonsToBuy > 0 then
-                        table.sort(buttonsToBuy, function(a, b) return a.Price < b.Price end)
-                        
-                        local targetButton = buttonsToBuy[1]
-                        TycoonStatusLbl.Text = string.format("Status: Buying item (%s)", targetButton.RawText)
-                        
-                        char:PivotTo(targetButton.Part.CFrame * CFrame.new(0, 1, 0))
-                        hrp.Velocity = Vector3.zero
-                        hrp.RotVelocity = Vector3.zero
-                        
-                        task.wait(0.5) 
-                    else
-                        TycoonStatusLbl.Text = "Status: No buttons found."
-                        task.wait(1)
-                    end
-                end
-            end)
+                end)
+            end
         else
             SolaraManager.MyTycoon = nil 
         end
         
         if SolaraManager.IsFarmingLemons and char and hrp then
-            if tick() - SolaraManager.LastCacheUpdate >= 10 then
-                SolaraManager.FarmCache = {}
-                SolaraManager.SpecialCount = 0
-                for _, obj in ipairs(workspace:GetDescendants()) do
-                    if not SolaraManager.IsFarmingLemons then break end
-                    if obj.Name == "LemonTree" then
-                        for _, fruit in ipairs(obj:GetDescendants()) do
-                            if fruit.Name == "Fruit" then
-                                local clickPart = fruit:FindFirstChild("ClickPart")
-                                if clickPart and clickPart:IsA("BasePart") then
-                                    local cd = clickPart:FindFirstChildOfClass("ClickDetector")
-                                    if cd then
-                                        local isSpecial = (fruit:FindFirstChild("SpecialAttachment") ~= nil) or (clickPart:FindFirstChild("SpecialAttachment") ~= nil)
-                                        if isSpecial then 
-                                            SolaraManager.SpecialCount = SolaraManager.SpecialCount + 1 
+            if SolaraManager.FarmSafeMode and #Players:GetPlayers() > 1 then
+                FarmStatusLbl.Text = "Status: PAUSED (Player in server)"
+            else
+                if tick() - SolaraManager.LastCacheUpdate >= 10 then
+                    SolaraManager.FarmCache = {}
+                    SolaraManager.SpecialCount = 0
+                    for _, obj in ipairs(workspace:GetDescendants()) do
+                        if not SolaraManager.IsFarmingLemons then break end
+                        if obj.Name == "LemonTree" then
+                            for _, fruit in ipairs(obj:GetDescendants()) do
+                                if fruit.Name == "Fruit" then
+                                    local clickPart = fruit:FindFirstChild("ClickPart")
+                                    if clickPart and clickPart:IsA("BasePart") then
+                                        local cd = clickPart:FindFirstChildOfClass("ClickDetector")
+                                        if cd then
+                                            local isSpecial = (fruit:FindFirstChild("SpecialAttachment") ~= nil) or (clickPart:FindFirstChild("SpecialAttachment") ~= nil)
+                                            if isSpecial then 
+                                                SolaraManager.SpecialCount = SolaraManager.SpecialCount + 1 
+                                            end
+                                            table.insert(SolaraManager.FarmCache, {Part = clickPart, Detector = cd, Special = isSpecial})
                                         end
-                                        table.insert(SolaraManager.FarmCache, {Part = clickPart, Detector = cd, Special = isSpecial})
                                     end
                                 end
                             end
                         end
                     end
+                    table.sort(SolaraManager.FarmCache, function(a, b) return a.Special and not b.Special end)
+                    SolaraManager.LastCacheUpdate = tick()
                 end
-                table.sort(SolaraManager.FarmCache, function(a, b) return a.Special and not b.Special end)
-                SolaraManager.LastCacheUpdate = tick()
-            end
-            
-            local timeLeft = math.max(0, math.ceil(10 - (tick() - SolaraManager.LastCacheUpdate)))
-            ScanTimerLbl.Text = string.format("Next Scan: %d s", timeLeft)
-            
-            if #SolaraManager.FarmCache > 0 then
-                local currentFruit = table.remove(SolaraManager.FarmCache, 1) 
-                FarmStatusLbl.Text = string.format("Status: Harvesting (%d left, %d Special)", #SolaraManager.FarmCache, SolaraManager.SpecialCount)
                 
-                if currentFruit.Part and currentFruit.Part.Parent then
-                    if currentFruit.Special then 
-                        SolaraManager.SpecialCount = math.max(0, SolaraManager.SpecialCount - 1) 
-                    end
-                    pcall(function()
-                        local totalCycleTime = 1 / SolaraManager.FarmSpeed
-                        local waitTime1 = math.max(0.15, totalCycleTime * 0.4) 
-                        local waitTime2 = math.max(0.05, totalCycleTime * 0.4)
-                        local waitTime3 = math.max(0.1, totalCycleTime * 0.2)
-                        
-                        char:PivotTo(currentFruit.Part.CFrame * CFrame.new(0, 0, 2.5))
-                        hrp.Velocity = Vector3.zero
-                        task.wait(waitTime1) 
-                        
-                        if fireclickdetector then 
-                            fireclickdetector(currentFruit.Detector) 
+                local timeLeft = math.max(0, math.ceil(10 - (tick() - SolaraManager.LastCacheUpdate)))
+                ScanTimerLbl.Text = string.format("Next Scan: %d s", timeLeft)
+                
+                if #SolaraManager.FarmCache > 0 then
+                    local currentFruit = table.remove(SolaraManager.FarmCache, 1) 
+                    FarmStatusLbl.Text = string.format("Status: Harvesting (%d left, %d Special)", #SolaraManager.FarmCache, SolaraManager.SpecialCount)
+                    
+                    if currentFruit.Part and currentFruit.Part.Parent then
+                        if currentFruit.Special then 
+                            SolaraManager.SpecialCount = math.max(0, SolaraManager.SpecialCount - 1) 
                         end
-                        
-                        local cam = workspace.CurrentCamera
-                        cam.CameraType = Enum.CameraType.Scriptable
-                        cam.CFrame = CFrame.lookAt(cam.CFrame.Position, currentFruit.Part.Position)
-                        task.wait(waitTime2)
-                        
-                        local screenCenter = cam.ViewportSize / 2
-                        VirtualUser:Button1Down(screenCenter)
-                        task.wait(0.05)
-                        VirtualUser:Button1Up(screenCenter)
-                        
-                        cam.CameraType = Enum.CameraType.Custom
-                        task.wait(waitTime3)
-                    end)
+                        pcall(function()
+                            local totalCycleTime = 1 / SolaraManager.FarmSpeed
+                            local waitTime1 = math.max(0.15, totalCycleTime * 0.4) 
+                            local waitTime2 = math.max(0.05, totalCycleTime * 0.4)
+                            local waitTime3 = math.max(0.1, totalCycleTime * 0.2)
+                            
+                            char:PivotTo(currentFruit.Part.CFrame * CFrame.new(0, 0, 2.5))
+                            hrp.Velocity = Vector3.zero
+                            task.wait(waitTime1) 
+                            
+                            if fireclickdetector then 
+                                fireclickdetector(currentFruit.Detector) 
+                            end
+                            
+                            local cam = workspace.CurrentCamera
+                            cam.CameraType = Enum.CameraType.Scriptable
+                            cam.CFrame = CFrame.lookAt(cam.CFrame.Position, currentFruit.Part.Position)
+                            task.wait(waitTime2)
+                            
+                            local screenCenter = cam.ViewportSize / 2
+                            VirtualUser:Button1Down(screenCenter)
+                            task.wait(0.05)
+                            VirtualUser:Button1Up(screenCenter)
+                            
+                            cam.CameraType = Enum.CameraType.Custom
+                            task.wait(waitTime3)
+                        end)
+                    end
+                else
+                    FarmStatusLbl.Text = "Status: Waiting for respawns..."
                 end
-            else
-                FarmStatusLbl.Text = "Status: Waiting for respawns..."
             end
         end
         
