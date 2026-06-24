@@ -1,6 +1,6 @@
---[[ Leyley's cheat V5.5 ]]--
+--[[ Leyley's cheat V5.6 ]]--
 
-print("Leyley's cheat V5.5 loaded")
+print("Leyley's cheat V5.6 loaded")
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -91,7 +91,7 @@ local function ParsePrice(str)
 end
 
 local SolaraManager = {
-    GuiName = "LeyleysCheat_V5_5",
+    GuiName = "LeyleysCheat_V5_6",
     ActiveTab = "Game",
     CurrentTheme = Themes.Default,
     
@@ -863,6 +863,9 @@ task.spawn(function()
                             VirtualUser:Button1Up(screenCenter)
                             
                             cam.CameraType = Enum.CameraType.Custom
+                            if hrp then
+                                cam.CFrame = CFrame.lookAt(cam.CFrame.Position, cam.CFrame.Position + hrp.CFrame.LookVector * 10)
+                            end
                             task.wait(waitTime3)
                         end)
                     end
