@@ -1,6 +1,6 @@
---[[ Leyley's cheat V5.2 ]]--
+--[[ Leyley's cheat V5.3 ]]--
 
-print("Leyley's cheat V5.2 loaded")
+print("Leyley's cheat V5.3 loaded")
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -91,7 +91,7 @@ local function ParsePrice(str)
 end
 
 local SolaraManager = {
-    GuiName = "LeyleysCheat_V26",
+    GuiName = "LeyleysCheat_V5_3",
     ActiveTab = "Game",
     CurrentTheme = Themes.Default,
     
@@ -104,17 +104,17 @@ local SolaraManager = {
     
     ActiveGameConfig = "SellLemons",
     
-    IsAutoBuying = false,
-    BuySafeMode = false,
+    ActiveBuyState = "Off",
     MyTycoon = nil,
     TargetTycoonOwner = "",
     
-    IsFarmingLemons = false,
-    FarmSafeMode = false,
+    ActiveFarmState = "Off",
     FarmSpeed = 2,
     FarmCache = {}, 
     SpecialCount = 0,
     LastCacheUpdate = 0, 
+    
+    HasSafetyRespawned = false,
     
     ThemeObjects = { Backgrounds = {}, Panels = {}, Accents = {}, Strokes = {}, Texts = {} }
 }
@@ -537,16 +537,13 @@ FarmSpeedBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-local ToggleFarm, ToggleBuy
-local FarmBtn, AutoBuyBtn
-
 local FarmActionFrame = Instance.new("Frame", TycoonLemonScroll)
 FarmActionFrame.Size = UDim2.new(0.9, 0, 0, 40)
 FarmActionFrame.BackgroundTransparency = 1
 FarmActionFrame.LayoutOrder = 5
 
-FarmBtn, _ = CreateButton(FarmActionFrame, "FarmBtn", "Auto Farm: OFF", UDim2.new(0.48,0,1,0), UDim2.new(0,0,0,0), SolaraManager.CurrentTheme.Danger)
-local FarmSafeBtn, _ = CreateButton(FarmActionFrame, "FarmSafeBtn", "Safe Mode: OFF", UDim2.new(0.48,0,1,0), UDim2.new(0.52,0,0,0), SolaraManager.CurrentTheme.Danger)
+local FarmBtn, _ = CreateButton(FarmActionFrame, "FarmBtn", "Auto Farm: OFF", UDim2.new(0.48,0,1,0), UDim2.new(0,0,0,0), SolaraManager.CurrentTheme.Danger)
+local SafeFarmBtn, _ = CreateButton(FarmActionFrame, "SafeFarmBtn", "Safe Farm: OFF", UDim2.new(0.48,0,1,0), UDim2.new(0.52,0,0,0), SolaraManager.CurrentTheme.Danger)
 
 local Divider = Instance.new("Frame", TycoonLemonScroll)
 Divider.Size = UDim2.new(0.8, 0, 0, 2)
@@ -569,55 +566,59 @@ BuyActionFrame.Size = UDim2.new(0.9, 0, 0, 40)
 BuyActionFrame.BackgroundTransparency = 1
 BuyActionFrame.LayoutOrder = 10
 
-AutoBuyBtn, _ = CreateButton(BuyActionFrame, "AutoBuyBtn", "Auto Buy: OFF", UDim2.new(0.48,0,1,0), UDim2.new(0,0,0,0), SolaraManager.CurrentTheme.Danger)
-local BuySafeBtn, _ = CreateButton(BuyActionFrame, "BuySafeBtn", "Safe Mode: OFF", UDim2.new(0.48,0,1,0), UDim2.new(0.52,0,0,0), SolaraManager.CurrentTheme.Danger)
+local AutoBuyBtn, _ = CreateButton(BuyActionFrame, "AutoBuyBtn", "Auto Buy: OFF", UDim2.new(0.48,0,1,0), UDim2.new(0,0,0,0), SolaraManager.CurrentTheme.Danger)
+local SafeBuyBtn, _ = CreateButton(BuyActionFrame, "SafeBuyBtn", "Safe Buy: OFF", UDim2.new(0.48,0,1,0), UDim2.new(0.52,0,0,0), SolaraManager.CurrentTheme.Danger)
 
-ToggleFarm = function(state)
-    SolaraManager.IsFarmingLemons = state
-    FarmBtn.Text = state and "Auto Farm: ON" or "Auto Farm: OFF"
-    ApplyTween(FarmBtn, {BackgroundColor3 = state and SolaraManager.CurrentTheme.Success or SolaraManager.CurrentTheme.Danger})
+local function UpdateActionUI()
+    FarmBtn.Text = (SolaraManager.ActiveFarmState == "Normal") and "Auto Farm: ON" or "Auto Farm: OFF"
+    ApplyTween(FarmBtn, {BackgroundColor3 = (SolaraManager.ActiveFarmState == "Normal") and SolaraManager.CurrentTheme.Success or SolaraManager.CurrentTheme.Danger})
     
-    if not state then
+    SafeFarmBtn.Text = (SolaraManager.ActiveFarmState == "Safe") and "Safe Farm: ON" or "Safe Farm: OFF"
+    ApplyTween(SafeFarmBtn, {BackgroundColor3 = (SolaraManager.ActiveFarmState == "Safe") and SolaraManager.CurrentTheme.Success or SolaraManager.CurrentTheme.Danger})
+    
+    AutoBuyBtn.Text = (SolaraManager.ActiveBuyState == "Normal") and "Auto Buy: ON" or "Auto Buy: OFF"
+    ApplyTween(AutoBuyBtn, {BackgroundColor3 = (SolaraManager.ActiveBuyState == "Normal") and SolaraManager.CurrentTheme.Success or SolaraManager.CurrentTheme.Danger})
+    
+    SafeBuyBtn.Text = (SolaraManager.ActiveBuyState == "Safe") and "Safe Buy: ON" or "Safe Buy: OFF"
+    ApplyTween(SafeBuyBtn, {BackgroundColor3 = (SolaraManager.ActiveBuyState == "Safe") and SolaraManager.CurrentTheme.Success or SolaraManager.CurrentTheme.Danger})
+
+    if SolaraManager.ActiveFarmState == "Off" then
         workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
         FarmStatusLbl.Text = "Status: Idle"
         ScanTimerLbl.Text = "Next Scan: --"
-    else
-        if SolaraManager.IsAutoBuying then
-            ToggleBuy(false)
-        end
     end
-end
-
-ToggleBuy = function(state)
-    SolaraManager.IsAutoBuying = state
-    AutoBuyBtn.Text = state and "Auto Buy: ON" or "Auto Buy: OFF"
-    ApplyTween(AutoBuyBtn, {BackgroundColor3 = state and SolaraManager.CurrentTheme.Success or SolaraManager.CurrentTheme.Danger})
     
-    if not state then 
-        TycoonStatusLbl.Text = "Status: Idle" 
-    else
-        if SolaraManager.IsFarmingLemons then
-            ToggleFarm(false)
-        end
+    if SolaraManager.ActiveBuyState == "Off" then
+        TycoonStatusLbl.Text = "Status: Idle"
     end
 end
 
-FarmBtn.MouseButton1Click:Connect(function() ToggleFarm(not SolaraManager.IsFarmingLemons) end)
+FarmBtn.MouseButton1Click:Connect(function()
+    if SolaraManager.ActiveFarmState == "Normal" then SolaraManager.ActiveFarmState = "Off"
+    else SolaraManager.ActiveFarmState = "Normal"; SolaraManager.ActiveBuyState = "Off" end
+    UpdateActionUI()
+end)
+
+SafeFarmBtn.MouseButton1Click:Connect(function()
+    if SolaraManager.ActiveFarmState == "Safe" then SolaraManager.ActiveFarmState = "Off"
+    else SolaraManager.ActiveFarmState = "Safe"; SolaraManager.ActiveBuyState = "Off" end
+    SolaraManager.HasSafetyRespawned = false
+    UpdateActionUI()
+end)
+
 AutoBuyBtn.MouseButton1Click:Connect(function()
     SolaraManager.TargetTycoonOwner = TycoonOwnerInput.Text
-    ToggleBuy(not SolaraManager.IsAutoBuying)
+    if SolaraManager.ActiveBuyState == "Normal" then SolaraManager.ActiveBuyState = "Off"
+    else SolaraManager.ActiveBuyState = "Normal"; SolaraManager.ActiveFarmState = "Off" end
+    UpdateActionUI()
 end)
 
-FarmSafeBtn.MouseButton1Click:Connect(function()
-    SolaraManager.FarmSafeMode = not SolaraManager.FarmSafeMode
-    FarmSafeBtn.Text = SolaraManager.FarmSafeMode and "Safe Mode: ON" or "Safe Mode: OFF"
-    ApplyTween(FarmSafeBtn, {BackgroundColor3 = SolaraManager.FarmSafeMode and SolaraManager.CurrentTheme.Success or SolaraManager.CurrentTheme.Danger})
-end)
-
-BuySafeBtn.MouseButton1Click:Connect(function()
-    SolaraManager.BuySafeMode = not SolaraManager.BuySafeMode
-    BuySafeBtn.Text = SolaraManager.BuySafeMode and "Safe Mode: ON" or "Safe Mode: OFF"
-    ApplyTween(BuySafeBtn, {BackgroundColor3 = SolaraManager.BuySafeMode and SolaraManager.CurrentTheme.Success or SolaraManager.CurrentTheme.Danger})
+SafeBuyBtn.MouseButton1Click:Connect(function()
+    SolaraManager.TargetTycoonOwner = TycoonOwnerInput.Text
+    if SolaraManager.ActiveBuyState == "Safe" then SolaraManager.ActiveBuyState = "Off"
+    else SolaraManager.ActiveBuyState = "Safe"; SolaraManager.ActiveFarmState = "Off" end
+    SolaraManager.HasSafetyRespawned = false
+    UpdateActionUI()
 end)
 
 local SoonConfig = Instance.new("Frame", GameContentFrame)
@@ -656,10 +657,30 @@ task.spawn(function()
             end)
         end
         
-        if SolaraManager.IsAutoBuying and char and hrp then
-            if SolaraManager.BuySafeMode and #Players:GetPlayers() > 1 then
-                TycoonStatusLbl.Text = "Status: PAUSED (Player in server)"
-            else
+        local otherPlayersPresent = #Players:GetPlayers() > 1
+        local safeModePaused = false
+        
+        if otherPlayersPresent then
+            if SolaraManager.ActiveFarmState == "Safe" or SolaraManager.ActiveBuyState == "Safe" then
+                safeModePaused = true
+                if not SolaraManager.HasSafetyRespawned then
+                    if hum then 
+                        hum.Health = 0 
+                        if char then char:BreakJoints() end
+                    end
+                    SolaraManager.HasSafetyRespawned = true
+                end
+                
+                if SolaraManager.ActiveFarmState == "Safe" then FarmStatusLbl.Text = "Status: PAUSED (Player in server)" end
+                if SolaraManager.ActiveBuyState == "Safe" then TycoonStatusLbl.Text = "Status: PAUSED (Player in server)" end
+            end
+        else
+            SolaraManager.HasSafetyRespawned = false 
+        end
+        
+        if not safeModePaused then
+            
+            if SolaraManager.ActiveBuyState ~= "Off" and char and hrp then
                 pcall(function()
                     local targetOwnerName = SolaraManager.TargetTycoonOwner
                     if targetOwnerName == "" then 
@@ -776,19 +797,13 @@ task.spawn(function()
                     end
                 end)
             end
-        else
-            SolaraManager.MyTycoon = nil 
-        end
-        
-        if SolaraManager.IsFarmingLemons and char and hrp then
-            if SolaraManager.FarmSafeMode and #Players:GetPlayers() > 1 then
-                FarmStatusLbl.Text = "Status: PAUSED (Player in server)"
-            else
+            
+            if SolaraManager.ActiveFarmState ~= "Off" and char and hrp then
                 if tick() - SolaraManager.LastCacheUpdate >= 10 then
                     SolaraManager.FarmCache = {}
                     SolaraManager.SpecialCount = 0
                     for _, obj in ipairs(workspace:GetDescendants()) do
-                        if not SolaraManager.IsFarmingLemons then break end
+                        if SolaraManager.ActiveFarmState == "Off" then break end
                         if obj.Name == "LemonTree" then
                             for _, fruit in ipairs(obj:GetDescendants()) do
                                 if fruit.Name == "Fruit" then
