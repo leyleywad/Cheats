@@ -1,6 +1,6 @@
---[[ Leyley's cheat V5.9 ]]--
+--[[ Leyley's cheat V5.10 ]]--
 
-print("Leyley's cheat V5.9 loaded")
+print("Leyley's cheat V5.10 loaded")
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -63,39 +63,23 @@ GenerateSuffixes()
 local function ParsePrice(str)
     if not str then return math.huge end
     str = string.lower(tostring(str))
-    
-    if string.match(str, "free") or string.match(str, "gratuit") then 
-        return 0 
-    end
-    
+    if string.match(str, "free") or string.match(str, "gratuit") then return 0 end
     local sciNum = tonumber(str)
     if sciNum then return sciNum end
-    
     str = string.gsub(str, "[^%d%.%a]", "") 
-    
     local numStr, suffix = string.match(str, "^([%d%.]+)(%a*)$")
-    
-    if not numStr then 
-        return math.huge
-    end
-    
+    if not numStr then return math.huge end
     local num = tonumber(numStr)
     if not num then return math.huge end
-    
     if suffix and suffix ~= "" then
         local powerIndex = SuffixDict[suffix]
-        if powerIndex then
-            num = num * (10 ^ (powerIndex * 3))
-        else
-            return math.huge
-        end
+        if powerIndex then num = num * (10 ^ (powerIndex * 3)) else return math.huge end
     end
-    
     return num
 end
 
 local SolaraManager = {
-    GuiName = "LeyleysCheat_V5_9",
+    GuiName = "LeyleysCheat_V5_10",
     ActiveTab = "Player",
     CurrentTheme = Themes.Default,
     
@@ -120,8 +104,9 @@ local SolaraManager = {
     
     HasSafetyRespawned = false,
     ActiveAutoUpgrade = false,
+    LastUpgradeCheck = 0,
     
-    ThemeObjects = { Backgrounds = {}, Panels = {}, Accents = {}, Strokes = {}, Texts = {} }
+    ThemeObjects = { Backgrounds = {}, Panels = {}, Accents = {}, Strokes = {}, Texts = {}, Dividers = {} }
 }
 
 if CoreGui:FindFirstChild(SolaraManager.GuiName) then
@@ -148,13 +133,20 @@ local function CreateButton(parent, name, text, size, pos, bgColor, themeGroup)
     btn.Text = text
     btn.Parent = parent
     
+    local padding = Instance.new("UIPadding", btn)
+    padding.PaddingLeft = UDim.new(0.05, 0)
+    padding.PaddingRight = UDim.new(0.05, 0)
+    padding.PaddingTop = UDim.new(0.1, 0)
+    padding.PaddingBottom = UDim.new(0.1, 0)
+    
     local corner = Instance.new("UICorner", btn)
     corner.CornerRadius = UDim.new(0.2, 0)
     
     local stroke = Instance.new("UIStroke", btn)
     stroke.Color = SolaraManager.CurrentTheme.Stroke
-    stroke.Thickness = 1.5
+    stroke.Thickness = 1
     stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    stroke.LineJoinMode = Enum.LineJoinMode.Round
     
     if themeGroup == "Panel" then 
         table.insert(SolaraManager.ThemeObjects.Panels, btn)
@@ -201,13 +193,18 @@ local function CreateInput(parent, name, placeholder, size, pos)
     box.Text = ""
     box.Parent = parent
     
+    local padding = Instance.new("UIPadding", box)
+    padding.PaddingLeft = UDim.new(0.05, 0)
+    padding.PaddingRight = UDim.new(0.05, 0)
+    
     local corner = Instance.new("UICorner", box)
     corner.CornerRadius = UDim.new(0.2, 0)
     
     local stroke = Instance.new("UIStroke", box)
     stroke.Color = SolaraManager.CurrentTheme.Stroke
-    stroke.Thickness = 1.5
+    stroke.Thickness = 1
     stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    stroke.LineJoinMode = Enum.LineJoinMode.Round
     
     table.insert(SolaraManager.ThemeObjects.Panels, box)
     table.insert(SolaraManager.ThemeObjects.Texts, box)
@@ -225,6 +222,7 @@ local function UpdateTheme(themeName)
     for _, pnl in ipairs(SolaraManager.ThemeObjects.Panels) do ApplyTween(pnl, {BackgroundColor3 = newTheme.PanelBg}, 0.5) end
     for _, acc in ipairs(SolaraManager.ThemeObjects.Accents) do ApplyTween(acc, {BackgroundColor3 = newTheme.Accent}, 0.5) end
     for _, strk in ipairs(SolaraManager.ThemeObjects.Strokes) do ApplyTween(strk, {Color = newTheme.Stroke}, 0.5) end
+    for _, div in ipairs(SolaraManager.ThemeObjects.Dividers) do ApplyTween(div, {BackgroundColor3 = newTheme.Stroke}, 0.5) end
     for _, txt in ipairs(SolaraManager.ThemeObjects.Texts) do ApplyTween(txt, {TextColor3 = newTheme.Text}, 0.5) end
     
     for tabName, btn in pairs(Tabs) do
@@ -565,7 +563,7 @@ Divider.Size = UDim2.new(0.8, 0, 0, 2)
 Divider.BackgroundColor3 = SolaraManager.CurrentTheme.Stroke
 Divider.BorderSizePixel = 0
 Divider.LayoutOrder = 6
-table.insert(SolaraManager.ThemeObjects.Strokes, Divider)
+table.insert(SolaraManager.ThemeObjects.Dividers, Divider)
 
 local TycoonTitle = CreateLabel(TycoonLemonScroll, "TycoonTitle", "🏭 TYCOON AUTO BUY", UDim2.new(1,0,0,30), UDim2.new())
 TycoonTitle.LayoutOrder = 7
@@ -606,7 +604,7 @@ Divider2.Size = UDim2.new(0.8, 0, 0, 2)
 Divider2.BackgroundColor3 = SolaraManager.CurrentTheme.Stroke
 Divider2.BorderSizePixel = 0
 Divider2.LayoutOrder = 11
-table.insert(SolaraManager.ThemeObjects.Strokes, Divider2)
+table.insert(SolaraManager.ThemeObjects.Dividers, Divider2)
 
 local UpgradeTitle = CreateLabel(TycoonLemonScroll, "UpgradeTitle", "📈 AUTO UPGRADES", UDim2.new(1,0,0,30), UDim2.new())
 UpgradeTitle.LayoutOrder = 12
@@ -732,38 +730,55 @@ task.spawn(function()
         end)
         
         if SolaraManager.ActiveAutoUpgrade then
-            pcall(function()
-                local manageMenu = LocalPlayer.PlayerGui:FindFirstChild("Manage")
-                if manageMenu then
-                    local manageFrame = manageMenu.ManageMenu.Body.Frame.Manage
-                    for _, child in ipairs(manageFrame:GetChildren()) do
-                        if string.match(child.Name, "^Lemon") then
-                            local upgradeBtn = child:FindFirstChild("Upgrade", true)
-                            if upgradeBtn and upgradeBtn:IsA("GuiButton") then
-                                
-                                local priceNum = math.huge
-                                local priceObj = upgradeBtn:FindFirstChild("Price")
-                                if priceObj and (priceObj:IsA("TextLabel") or priceObj:IsA("TextBox")) then
-                                    local p = ParsePrice(priceObj.Text)
-                                    if p ~= math.huge then
-                                        priceNum = p
+            if tick() - SolaraManager.LastUpgradeCheck >= 1 then 
+                SolaraManager.LastUpgradeCheck = tick()
+                pcall(function()
+                    local manageMenu = LocalPlayer.PlayerGui:FindFirstChild("Manage")
+                    if manageMenu then
+                        local manageFrame = manageMenu.ManageMenu.Body.Frame.Manage
+                        for _, child in ipairs(manageFrame:GetChildren()) do
+                            if string.match(child.Name, "^Lemon") then
+                                local upgradeBtn = child:FindFirstChild("Upgrade", true)
+                                if upgradeBtn and upgradeBtn:IsA("GuiButton") then
+                                    
+                                    local priceNum = math.huge
+                                    local priceObj = upgradeBtn:FindFirstChild("Price")
+                                    
+                                    if priceObj and (priceObj:IsA("TextLabel") or priceObj:IsA("TextBox")) then
+                                        local p = ParsePrice(priceObj.Text)
+                                        if p ~= math.huge then
+                                            priceNum = p
+                                        end
+                                    else
+                                        print("[DEBUG] No Price object found in:", child.Name)
                                     end
-                                end
-                                
-                                -- Si on a l'argent (et qu'on a bien trouvé un prix valide)
-                                if currentCashNum > 0 and currentCashNum >= priceNum then
-                                    if firesignal then
-                                        pcall(function() firesignal(upgradeBtn.MouseButton1Click) end)
-                                        pcall(function() firesignal(upgradeBtn.Activated) end)
+                                    
+                                    if currentCashNum > 0 and currentCashNum >= priceNum then
+                                        print("[DEBUG] Buying Upgrade:", child.Name, "| Price:", priceNum, "| Cash:", currentCashNum)
+                                        if firesignal then
+                                            pcall(function() firesignal(upgradeBtn.MouseButton1Click) end)
+                                            pcall(function() firesignal(upgradeBtn.Activated) end)
+                                        else
+                                            print("[DEBUG] 'firesignal' non detecté. Tentative avec getconnections.")
+                                            local clicked = false
+                                            if getconnections then
+                                                for _, conn in ipairs(getconnections(upgradeBtn.MouseButton1Click)) do
+                                                    conn.Function()
+                                                    clicked = true
+                                                end
+                                            end
+                                            if not clicked then
+                                                print("[DEBUG] getconnections a échoué. Le script ne peut pas forcer le clic.")
+                                            end
+                                        end
+                                        task.wait(0.1)
                                     end
-                                    -- Petit délai pour ne pas lagger si on achète beaucoup d'un coup
-                                    task.wait(0.05)
                                 end
                             end
                         end
                     end
-                end
-            end)
+                end)
+            end
         end
         
         local otherPlayersPresent = #Players:GetPlayers() > 1
