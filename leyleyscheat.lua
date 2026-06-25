@@ -1,10 +1,10 @@
 --[[ 
-    Leyley's Premium Cheat V6.12 - THE COMPLETONIST UPDATE
-    - Added: ESP now shows Player Name and Health (BillboardGui AlwaysOnTop) across the map.
-    - Info: All themes, 100+ suffixes, config saving, and strict folders check are present.
+    Leyley's Premium Cheat V6.13 - THE COMPLETONIST UPDATE
+    - Added: SMART HYBRID mode (Auto switches between Farm and Buy based on current cash vs cheapest button price).
+    - Info: All themes, 100+ suffixes, ESP (Name+Health), config saving, and strict folders check are present.
 ]]--
 
-print("Leyley's Premium Cheat V6.12 loaded")
+print("Leyley's Premium Cheat V6.13 loaded")
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -68,11 +68,11 @@ end
 
 -- [ 3. STATE MANAGER ]
 local SolaraManager = {
-    GuiName = "LeyleysCheat_V6_12", CurrentThemeName = "Default", CurrentTheme = Themes.Default, ActiveTab = "Player",
+    GuiName = "LeyleysCheat_V6_13", CurrentThemeName = "Default", CurrentTheme = Themes.Default, ActiveTab = "Player",
     ThemeObjects = { Backgrounds={}, Panels={}, Accents={}, Strokes={}, Texts={}, Dividers={} },
     UI = { TabButtons={}, Pages={}, PlaylistInputs={}, Toggles={}, Inputs={}, Texts={} },
     IsClicking=false, IsAntiAfk=false, IsNoclip=false, IsESP=false, SpeedOverride=nil, JumpOverride=nil, SelectedTarget=nil,
-    ActiveFarmState="Off", FarmSpeed=2, ActiveBuyState="Off", BuySpeed=2, MyTycoon=nil, FarmCache={}, SpecialCount=0, LastCacheUpdate=0,
+    ActiveFarmState="Off", FarmSpeed=2, ActiveBuyState="Off", BuySpeed=2, ActiveSmartState="Off", MyTycoon=nil, FarmCache={}, SpecialCount=0, LastCacheUpdate=0,
     HasSafetyRespawned=false, ClickDelay=0.1, LastCashValue=0, CashHistory={},
     CustomMusicInstance=nil, CustomMusicName="Unknown Audio", CustomMusicId="", CustomMusicVolume=100,
     Playlists={{Id="",Name=""},{Id="",Name=""},{Id="",Name=""},{Id="",Name=""},{Id="",Name=""}}, ConfigFilename="LeyleysCheat_Config.json"
@@ -116,6 +116,8 @@ SolaraManager.SyncVisuals = function()
     if tl.SafeFarm then tl.SafeFarm.BackgroundColor3=gc(SolaraManager.ActiveFarmState=="Safe") end
     if tl.Buy then tl.Buy.BackgroundColor3=gc(SolaraManager.ActiveBuyState=="Normal") end
     if tl.SafeBuy then tl.SafeBuy.BackgroundColor3=gc(SolaraManager.ActiveBuyState=="Safe") end
+    if tl.Smart then tl.Smart.BackgroundColor3=gc(SolaraManager.ActiveSmartState=="Normal") end
+    if tl.SafeSmart then tl.SafeSmart.BackgroundColor3=gc(SolaraManager.ActiveSmartState=="Safe") end
     if il.Speed then il.Speed.Text=SolaraManager.SpeedOverride and tostring(SolaraManager.SpeedOverride) or "" end
     if il.Jump then il.Jump.Text=SolaraManager.JumpOverride and tostring(SolaraManager.JumpOverride) or "" end
     if il.FarmS then il.FarmS.Text=tostring(SolaraManager.FarmSpeed) end
@@ -142,7 +144,7 @@ local SG = Instance.new("ScreenGui"); SG.Name=SolaraManager.GuiName; SG.ResetOnS
 local ResB = Button(SG, "ResB", "➕ Open", UDim2.new(0,80,0,40), UDim2.new(0,20,1,-60), SolaraManager.CurrentTheme.Accent, "Accents"); ResB.Visible=false; ResB.ZIndex=10
 local Main = Frame(SG, "Main", UDim2.new(0,800,0,480), UDim2.new(0.5,-400,0.5,-240)); Main.ClipsDescendants=true; UICorner(Main,8); SolaraManager.UI.MainFrameStroke = UIStroke(Main, SolaraManager.CurrentTheme.Accent, 2)
 local TBar = Frame(Main, "TBar", UDim2.new(1,0,0,40), UDim2.new(), SolaraManager.CurrentTheme.PanelBg, "Panels"); Drag(Main, TBar)
-local TLbl = Label(TBar, "TLbl", "  ✨ Leyley's Premium Cheat V6.12", UDim2.new(1,-100,1,0), UDim2.new(), Enum.TextXAlignment.Left); TLbl.Font=Enum.Font.GothamBold
+local TLbl = Label(TBar, "TLbl", "  ✨ Leyley's Premium Cheat V6.13", UDim2.new(1,-100,1,0), UDim2.new(), Enum.TextXAlignment.Left); TLbl.Font=Enum.Font.GothamBold
 local ClsB = Button(TBar, "ClsB", "X", UDim2.new(0,30,0,30), UDim2.new(1,-35,0,5), SolaraManager.CurrentTheme.Danger, nil)
 local MinB = Button(TBar, "MinB", "-", UDim2.new(0,30,0,30), UDim2.new(1,-70,0,5), SolaraManager.CurrentTheme.Warning, nil)
 
@@ -224,15 +226,23 @@ do
     local bSI = Input(bSR, "bSI", "Speed (1-10)", UDim2.new(0.68,0,1,0), UDim2.new()); local bSB = Button(bSR, "bSB", "Set", UDim2.new(0.28,0,1,0), UDim2.new(0.72,0,0,0), SolaraManager.CurrentTheme.Accent); SolaraManager.UI.Inputs.BuyS=bSB
     local bAR = Instance.new("Frame",scr); bAR.Size=UDim2.new(1,0,0,35); bAR.BackgroundTransparency=1; bAR.LayoutOrder=13
     local aB = Button(bAR, "aB", "Auto Buy", UDim2.new(0.48,0,1,0), UDim2.new(), SolaraManager.CurrentTheme.PanelBg); local saB = Button(bAR, "saB", "Safe Buy", UDim2.new(0.48,0,1,0), UDim2.new(0.52,0,0,0), SolaraManager.CurrentTheme.PanelBg); SolaraManager.UI.Toggles.Buy=aB; SolaraManager.UI.Toggles.SafeBuy=saB
+    Frame(scr, "d2", UDim2.new(1,0,0,2), UDim2.new(), SolaraManager.CurrentTheme.Stroke, "Dividers").LayoutOrder=14
+    
+    Label(scr, "smT", "🤖 SMART HYBRID (Auto Farm + Buy)", UDim2.new(1,0,0,20), UDim2.new(), Enum.TextXAlignment.Left).LayoutOrder=15
+    local smAR = Instance.new("Frame",scr); smAR.Size=UDim2.new(1,0,0,35); smAR.BackgroundTransparency=1; smAR.LayoutOrder=16
+    local smB = Button(smAR, "smB", "Smart Mix", UDim2.new(0.48,0,1,0), UDim2.new(), SolaraManager.CurrentTheme.PanelBg); local ssmB = Button(smAR, "ssmB", "Safe Smart", UDim2.new(0.48,0,1,0), UDim2.new(0.52,0,0,0), SolaraManager.CurrentTheme.PanelBg); SolaraManager.UI.Toggles.Smart=smB; SolaraManager.UI.Toggles.SafeSmart=ssmB
     
     Button(gSel, "g1B", "Sell Lemons", UDim2.new(1,0,0,35), UDim2.new(), SolaraManager.CurrentTheme.Accent, "Panels")
-    local function UpdG() SolaraManager.SyncVisuals(); if SolaraManager.ActiveFarmState=="Off" then workspace.CurrentCamera.CameraType=Enum.CameraType.Custom; SolaraManager.UI.FarmStatusLbl.Text="Status: Idle" end; if SolaraManager.ActiveBuyState=="Off" then SolaraManager.UI.TycoonStatusLbl.Text="Status: Idle" end end
+    local function UpdG() SolaraManager.SyncVisuals(); if SolaraManager.ActiveFarmState=="Off" and SolaraManager.ActiveSmartState=="Off" then workspace.CurrentCamera.CameraType=Enum.CameraType.Custom; SolaraManager.UI.FarmStatusLbl.Text="Status: Idle" end; if SolaraManager.ActiveBuyState=="Off" and SolaraManager.ActiveSmartState=="Off" then SolaraManager.UI.TycoonStatusLbl.Text="Status: Idle" end end
     fSB.MouseButton1Click:Connect(function() local v=tonumber(fSI.Text); if v and v>0 then SolaraManager.FarmSpeed=math.min(v,4); fSB.Text=tostring(SolaraManager.FarmSpeed) end end)
     bSB.MouseButton1Click:Connect(function() local v=tonumber(bSI.Text); if v and v>0 then SolaraManager.BuySpeed=math.min(v,10); bSB.Text=tostring(SolaraManager.BuySpeed) end end)
-    fB.MouseButton1Click:Connect(function() SolaraManager.ActiveFarmState=(SolaraManager.ActiveFarmState=="Normal") and "Off" or "Normal"; if SolaraManager.ActiveFarmState=="Normal" then SolaraManager.ActiveBuyState="Off" end; UpdG() end)
-    sfB.MouseButton1Click:Connect(function() SolaraManager.ActiveFarmState=(SolaraManager.ActiveFarmState=="Safe") and "Off" or "Safe"; if SolaraManager.ActiveFarmState=="Safe" then SolaraManager.ActiveBuyState="Off" end; SolaraManager.HasSafetyRespawned=false; UpdG() end)
-    aB.MouseButton1Click:Connect(function() SolaraManager.ActiveBuyState=(SolaraManager.ActiveBuyState=="Normal") and "Off" or "Normal"; if SolaraManager.ActiveBuyState=="Normal" then SolaraManager.ActiveFarmState="Off" end; UpdG() end)
-    saB.MouseButton1Click:Connect(function() SolaraManager.ActiveBuyState=(SolaraManager.ActiveBuyState=="Safe") and "Off" or "Safe"; if SolaraManager.ActiveBuyState=="Safe" then SolaraManager.ActiveFarmState="Off" end; SolaraManager.HasSafetyRespawned=false; UpdG() end)
+    
+    fB.MouseButton1Click:Connect(function() SolaraManager.ActiveFarmState=(SolaraManager.ActiveFarmState=="Normal") and "Off" or "Normal"; if SolaraManager.ActiveFarmState=="Normal" then SolaraManager.ActiveBuyState="Off"; SolaraManager.ActiveSmartState="Off" end; UpdG() end)
+    sfB.MouseButton1Click:Connect(function() SolaraManager.ActiveFarmState=(SolaraManager.ActiveFarmState=="Safe") and "Off" or "Safe"; if SolaraManager.ActiveFarmState=="Safe" then SolaraManager.ActiveBuyState="Off"; SolaraManager.ActiveSmartState="Off" end; SolaraManager.HasSafetyRespawned=false; UpdG() end)
+    aB.MouseButton1Click:Connect(function() SolaraManager.ActiveBuyState=(SolaraManager.ActiveBuyState=="Normal") and "Off" or "Normal"; if SolaraManager.ActiveBuyState=="Normal" then SolaraManager.ActiveFarmState="Off"; SolaraManager.ActiveSmartState="Off" end; UpdG() end)
+    saB.MouseButton1Click:Connect(function() SolaraManager.ActiveBuyState=(SolaraManager.ActiveBuyState=="Safe") and "Off" or "Safe"; if SolaraManager.ActiveBuyState=="Safe" then SolaraManager.ActiveFarmState="Off"; SolaraManager.ActiveSmartState="Off" end; SolaraManager.HasSafetyRespawned=false; UpdG() end)
+    smB.MouseButton1Click:Connect(function() SolaraManager.ActiveSmartState=(SolaraManager.ActiveSmartState=="Normal") and "Off" or "Normal"; if SolaraManager.ActiveSmartState=="Normal" then SolaraManager.ActiveFarmState="Off"; SolaraManager.ActiveBuyState="Off" end; UpdG() end)
+    ssmB.MouseButton1Click:Connect(function() SolaraManager.ActiveSmartState=(SolaraManager.ActiveSmartState=="Safe") and "Off" or "Safe"; if SolaraManager.ActiveSmartState=="Safe" then SolaraManager.ActiveFarmState="Off"; SolaraManager.ActiveBuyState="Off" end; SolaraManager.HasSafetyRespawned=false; UpdG() end)
 end
 
 -- [ PAGE 5: MUSIC ]
@@ -269,7 +279,7 @@ do
     Frame(sScr, "dC", UDim2.new(1,0,0,2), UDim2.new(), SolaraManager.CurrentTheme.Stroke, "Dividers").LayoutOrder=3
     
     svB.MouseButton1Click:Connect(function()
-        local cD = {Theme=SolaraManager.CurrentThemeName, IsClicking=SolaraManager.IsClicking, IsAntiAfk=SolaraManager.IsAntiAfk, IsNoclip=SolaraManager.IsNoclip, IsESP=SolaraManager.IsESP, Speed=SolaraManager.SpeedOverride, Jump=SolaraManager.JumpOverride, FarmSpeed=SolaraManager.FarmSpeed, BuySpeed=SolaraManager.BuySpeed, ActiveFarmState=SolaraManager.ActiveFarmState, ActiveBuyState=SolaraManager.ActiveBuyState, CustomMusicId=SolaraManager.CustomMusicId, CustomMusicVolume=SolaraManager.CustomMusicVolume, Playlists=SolaraManager.Playlists}
+        local cD = {Theme=SolaraManager.CurrentThemeName, IsClicking=SolaraManager.IsClicking, IsAntiAfk=SolaraManager.IsAntiAfk, IsNoclip=SolaraManager.IsNoclip, IsESP=SolaraManager.IsESP, Speed=SolaraManager.SpeedOverride, Jump=SolaraManager.JumpOverride, FarmSpeed=SolaraManager.FarmSpeed, BuySpeed=SolaraManager.BuySpeed, ActiveFarmState=SolaraManager.ActiveFarmState, ActiveBuyState=SolaraManager.ActiveBuyState, ActiveSmartState=SolaraManager.ActiveSmartState, CustomMusicId=SolaraManager.CustomMusicId, CustomMusicVolume=SolaraManager.CustomMusicVolume, Playlists=SolaraManager.Playlists}
         if writefile then writefile(SolaraManager.ConfigFilename, HttpService:JSONEncode(cD)); svB.Text="Saved!"; task.wait(1); svB.Text="Save Config" end
     end)
     ldB.MouseButton1Click:Connect(function()
@@ -277,7 +287,7 @@ do
             local cD = HttpService:JSONDecode(readfile(SolaraManager.ConfigFilename))
             if cD then
                 if cD.IsClicking~=nil then SolaraManager.IsClicking=cD.IsClicking end; if cD.IsAntiAfk~=nil then SolaraManager.IsAntiAfk=cD.IsAntiAfk end; if cD.IsNoclip~=nil then SolaraManager.IsNoclip=cD.IsNoclip end; if cD.IsESP~=nil then SolaraManager.IsESP=cD.IsESP end
-                SolaraManager.SpeedOverride=cD.Speed; SolaraManager.JumpOverride=cD.Jump; if cD.FarmSpeed then SolaraManager.FarmSpeed=cD.FarmSpeed end; if cD.BuySpeed then SolaraManager.BuySpeed=cD.BuySpeed end; if cD.ActiveFarmState then SolaraManager.ActiveFarmState=cD.ActiveFarmState end; if cD.ActiveBuyState then SolaraManager.ActiveBuyState=cD.ActiveBuyState end; if cD.CustomMusicId then SolaraManager.CustomMusicId=cD.CustomMusicId end; if cD.CustomMusicVolume then SolaraManager.CustomMusicVolume=cD.CustomMusicVolume end; if cD.Playlists then SolaraManager.Playlists=cD.Playlists end
+                SolaraManager.SpeedOverride=cD.Speed; SolaraManager.JumpOverride=cD.Jump; if cD.FarmSpeed then SolaraManager.FarmSpeed=cD.FarmSpeed end; if cD.BuySpeed then SolaraManager.BuySpeed=cD.BuySpeed end; if cD.ActiveFarmState then SolaraManager.ActiveFarmState=cD.ActiveFarmState end; if cD.ActiveBuyState then SolaraManager.ActiveBuyState=cD.ActiveBuyState end; if cD.ActiveSmartState then SolaraManager.ActiveSmartState=cD.ActiveSmartState end; if cD.CustomMusicId then SolaraManager.CustomMusicId=cD.CustomMusicId end; if cD.CustomMusicVolume then SolaraManager.CustomMusicVolume=cD.CustomMusicVolume end; if cD.Playlists then SolaraManager.Playlists=cD.Playlists end
                 if cD.Theme then SolaraManager.ApplyTheme(cD.Theme) else SolaraManager.SyncVisuals() end; ldB.Text="Loaded!"; task.wait(1); ldB.Text="Load Config"
             end
         end
@@ -300,7 +310,6 @@ task.spawn(function()
         local cm = SolaraManager.CustomMusicInstance; local msl = SolaraManager.UI.MusicStatusLbl
         if cm and cm.IsLoaded then local p=cm.TimePosition; local l=cm.TimeLength; if msl then msl.Text=string.format("Now Playing: %s | %02d:%02d / %02d:%02d", SolaraManager.CustomMusicName, p/60, p%60, l/60, l%60) end else if msl and msl.Text~="Status: No music playing" then msl.Text="Status: No music playing" end end
         
-        -- ESP UPDATE: Now shows Name & Health AlwaysOnTop
         pcall(function() local eF=CoreGui:FindFirstChild("LeyleyESP"); if not eF then eF=Instance.new("Folder", CoreGui); eF.Name="LeyleyESP" end; if SolaraManager.IsESP then for _,p in ipairs(Players:GetPlayers()) do if p~=LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") then local h=eF:FindFirstChild(p.Name.."_ESP"); if not h then h=Instance.new("Highlight", eF); h.Name=p.Name.."_ESP"; h.FillColor=Color3.new(1,0,0); h.OutlineColor=Color3.new(1,1,1) end; h.Adornee=p.Character; local bg=eF:FindFirstChild(p.Name.."_BG"); if not bg then bg=Instance.new("BillboardGui", eF); bg.Name=p.Name.."_BG"; bg.AlwaysOnTop=true; bg.Size=UDim2.new(0,200,0,50); bg.ExtentsOffset=Vector3.new(0,3,0); local tl=Instance.new("TextLabel", bg); tl.Name="Txt"; tl.Size=UDim2.new(1,0,1,0); tl.BackgroundTransparency=1; tl.Font=Enum.Font.GothamBold; tl.TextSize=14; tl.TextColor3=Color3.new(1,1,1); tl.TextStrokeTransparency=0; tl.TextStrokeColor3=Color3.new(0,0,0) end; bg.Adornee=p.Character.HumanoidRootPart; bg.Txt.Text=string.format("%s\n❤ %d / %d", p.Name, math.floor(p.Character.Humanoid.Health), math.floor(p.Character.Humanoid.MaxHealth)) end end else eF:ClearAllChildren() end end)
         
         pcall(function() local cl=LocalPlayer.PlayerGui:FindFirstChild("HUD") and LocalPlayer.PlayerGui.HUD:FindFirstChild("Balance") and LocalPlayer.PlayerGui.HUD.Balance:FindFirstChild("Main") and LocalPlayer.PlayerGui.HUD.Balance.Main:FindFirstChild("Cash")
@@ -314,55 +323,42 @@ task.spawn(function()
             end
         end)
         
-        local sMP=false; local aFS=SolaraManager.ActiveFarmState; local aBS=SolaraManager.ActiveBuyState
-        if #Players:GetPlayers()>1 and (aFS=="Safe" or aBS=="Safe") then
+        local sMP=false; local aFS=SolaraManager.ActiveFarmState; local aBS=SolaraManager.ActiveBuyState; local aSS=SolaraManager.ActiveSmartState
+        if #Players:GetPlayers()>1 and (aFS=="Safe" or aBS=="Safe" or aSS=="Safe") then
             sMP=true; if not SolaraManager.HasSafetyRespawned and c and hrp then c:PivotTo(CFrame.new(0,103,0)); hrp.Velocity=Vector3.zero; hrp.RotVelocity=Vector3.zero; SolaraManager.HasSafetyRespawned=true end
-            if aFS=="Safe" and SolaraManager.UI.FarmStatusLbl then SolaraManager.UI.FarmStatusLbl.Text="Status: PAUSED (Player in server)" end; if aBS=="Safe" and SolaraManager.UI.TycoonStatusLbl then SolaraManager.UI.TycoonStatusLbl.Text="Status: PAUSED (Player in server)" end
+            local txt="Status: PAUSED (Player in server)"
+            if aFS=="Safe" and SolaraManager.UI.FarmStatusLbl then SolaraManager.UI.FarmStatusLbl.Text=txt end
+            if aBS=="Safe" and SolaraManager.UI.TycoonStatusLbl then SolaraManager.UI.TycoonStatusLbl.Text=txt end
+            if aSS=="Safe" then if SolaraManager.UI.FarmStatusLbl then SolaraManager.UI.FarmStatusLbl.Text=txt end; if SolaraManager.UI.TycoonStatusLbl then SolaraManager.UI.TycoonStatusLbl.Text=txt end end
         else SolaraManager.HasSafetyRespawned=false end
         
         if not sMP then
-            if aBS~="Off" and c and hrp then
+            local cb=nil
+            if (aBS~="Off" or aSS~="Off") and c and hrp then
                 pcall(function()
                     if not SolaraManager.MyTycoon then for _,fol in ipairs(workspace:GetChildren()) do local oV=fol:FindFirstChild("Owner"); if oV and string.lower(oV:IsA("ObjectValue") and oV.Value and oV.Value.Name or oV:IsA("StringValue") and oV.Value or "")==string.lower(LocalPlayer.Name) then SolaraManager.MyTycoon=fol; break end end end
                     if SolaraManager.MyTycoon then
-                        local bL={}; 
-                        
-                        local function sB(m) 
-                            if m and m:FindFirstChild("Button") and m.Button:IsA("BasePart") then 
-                                local g=m.Button:FindFirstChild("Gui") or m:FindFirstChild("Gui"); 
-                                if g and g:FindFirstChild("Price") then 
-                                    local pT=(g.Price:IsA("ValueBase") and tostring(g.Price.Value) or g.Price.Text)
-                                    local mT=(g:FindFirstChild("PriceMag") and (g.PriceMag:IsA("ValueBase") and tostring(g.PriceMag.Value) or g.PriceMag.Text) or "")
-                                    local rT=pT..mT
-                                    local p=ParsePrice(rT); 
-                                    if p>=0 and p~=math.huge then table.insert(bL, {Part=m.Button, Price=p, Raw=rT}) end 
-                                end 
-                            end 
-                        end
-                        
-                        if SolaraManager.MyTycoon:FindFirstChild("Purchases") then 
-                            local cats = {Structure=true, Other=true, Multiplier=true, Multipliers=true}
-                            for _,sf in ipairs(SolaraManager.MyTycoon.Purchases:GetChildren()) do 
-                                if sf:FindFirstChild("Buttons") then 
-                                    for _,cfol in ipairs(sf.Buttons:GetChildren()) do 
-                                        if cats[cfol.Name] then 
-                                            for _,b in ipairs(cfol:GetChildren()) do sB(b) end 
-                                        elseif cfol:IsA("Model") then 
-                                            sB(cfol) 
-                                        end 
-                                    end 
-                                end 
-                                if sf.Name=="Hills" then 
-                                    for _,d in ipairs(sf:GetDescendants()) do 
-                                        if d:IsA("Model") and d:FindFirstChild("Button") then sB(d) end 
-                                    end 
-                                end 
-                            end 
-                        end
-                        
-                        if #bL>0 then table.sort(bL, function(a,b) return a.Price<b.Price end); local cb=bL[1]; if SolaraManager.UI.TycoonStatusLbl then SolaraManager.UI.TycoonStatusLbl.Text="Status: Buying ("..cb.Raw..")" end; c:PivotTo(cb.Part.CFrame*CFrame.new(0,1,0)); hrp.Velocity=Vector3.zero; hrp.RotVelocity=Vector3.zero; task.wait(1/SolaraManager.BuySpeed) else if SolaraManager.UI.TycoonStatusLbl then SolaraManager.UI.TycoonStatusLbl.Text="Status: No buttons found." end; task.wait(1) end
+                        local bL={}; local function sB(m) if m and m:FindFirstChild("Button") and m.Button:IsA("BasePart") then local g=m.Button:FindFirstChild("Gui") or m:FindFirstChild("Gui"); if g and g:FindFirstChild("Price") then local pT=(g.Price:IsA("ValueBase") and tostring(g.Price.Value) or g.Price.Text); local mT=(g:FindFirstChild("PriceMag") and (g.PriceMag:IsA("ValueBase") and tostring(g.PriceMag.Value) or g.PriceMag.Text) or ""); local rT=pT..mT; local p=ParsePrice(rT); if p>=0 and p~=math.huge then table.insert(bL, {Part=m.Button, Price=p, Raw=rT}) end end end end
+                        if SolaraManager.MyTycoon:FindFirstChild("Purchases") then local cats={Structure=true, Other=true, Multiplier=true, Multipliers=true}; for _,sf in ipairs(SolaraManager.MyTycoon.Purchases:GetChildren()) do if sf:FindFirstChild("Buttons") then for _,cfol in ipairs(sf.Buttons:GetChildren()) do if cats[cfol.Name] then for _,b in ipairs(cfol:GetChildren()) do sB(b) end elseif cfol:IsA("Model") then sB(cfol) end end end if sf.Name=="Hills" then for _,d in ipairs(sf:GetDescendants()) do if d:IsA("Model") and d:FindFirstChild("Button") then sB(d) end end end end end
+                        if #bL>0 then table.sort(bL, function(a,b) return a.Price<b.Price end); cb=bL[1] end
                     end
                 end)
+            end
+            
+            if aSS~="Off" then
+                if cb and SolaraManager.LastCashValue >= cb.Price then
+                    aBS=aSS; aFS="Off"; if SolaraManager.UI.FarmStatusLbl then SolaraManager.UI.FarmStatusLbl.Text="Status: Smart (Switching to Buy)" end
+                else
+                    aFS=aSS; aBS="Off"; if SolaraManager.UI.TycoonStatusLbl then SolaraManager.UI.TycoonStatusLbl.Text=cb and "Status: Smart (Need $"..FormatNumber(cb.Price)..")" or "Status: Smart (No Buttons)" end
+                end
+            end
+            
+            if aBS~="Off" and c and hrp then
+                if cb then
+                    if SolaraManager.UI.TycoonStatusLbl then SolaraManager.UI.TycoonStatusLbl.Text="Status: Buying ("..cb.Raw..")" end; c:PivotTo(cb.Part.CFrame*CFrame.new(0,1,0)); hrp.Velocity=Vector3.zero; hrp.RotVelocity=Vector3.zero; task.wait(1/SolaraManager.BuySpeed)
+                else
+                    if SolaraManager.UI.TycoonStatusLbl then SolaraManager.UI.TycoonStatusLbl.Text="Status: No buttons found." end; task.wait(1)
+                end
             end
             
             if aFS~="Off" and c and hrp then
@@ -373,7 +369,7 @@ task.spawn(function()
                 end
                 
                 if #SolaraManager.FarmCache>0 then
-                    local tFD=table.remove(SolaraManager.FarmCache, 1); if SolaraManager.UI.FarmStatusLbl then SolaraManager.UI.FarmStatusLbl.Text=string.format("Status: Harvesting (%d left, %d Special)", #SolaraManager.FarmCache, SolaraManager.SpecialCount) end
+                    local tFD=table.remove(SolaraManager.FarmCache, 1); if SolaraManager.UI.FarmStatusLbl and aSS=="Off" then SolaraManager.UI.FarmStatusLbl.Text=string.format("Status: Harvesting (%d left, %d Special)", #SolaraManager.FarmCache, SolaraManager.SpecialCount) elseif SolaraManager.UI.FarmStatusLbl and aSS~="Off" then SolaraManager.UI.FarmStatusLbl.Text=string.format("Status: Smart Harvesting (%d left)", #SolaraManager.FarmCache) end
                     if tFD.Part and tFD.Part.Parent then if tFD.Special then SolaraManager.SpecialCount=math.max(0,SolaraManager.SpecialCount-1) end pcall(function() c:PivotTo(tFD.Part.CFrame*CFrame.new(0,0,2.5)); hrp.Velocity=Vector3.zero; task.wait(math.max(0.15,(1/SolaraManager.FarmSpeed)*0.4)); if fireclickdetector then fireclickdetector(tFD.Detector) end; local cam=workspace.CurrentCamera; cam.CameraType=Enum.CameraType.Scriptable; cam.CFrame=CFrame.lookAt(cam.CFrame.Position, tFD.Part.Position); task.wait(math.max(0.05,(1/SolaraManager.FarmSpeed)*0.4)); local sc=cam.ViewportSize/2; VirtualUser:Button1Down(sc); task.wait(0.05); VirtualUser:Button1Up(sc); cam.CameraType=Enum.CameraType.Custom; cam.CFrame=CFrame.lookAt(cam.CFrame.Position, cam.CFrame.Position+hrp.CFrame.LookVector*10); task.wait(math.max(0.1,(1/SolaraManager.FarmSpeed)*0.2)) end) end
                 else if SolaraManager.UI.FarmStatusLbl then SolaraManager.UI.FarmStatusLbl.Text="Status: Waiting for respawns..." end end
             end
