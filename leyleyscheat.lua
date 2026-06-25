@@ -1,6 +1,6 @@
---[[ Leyley's cheat V5.8 ]]--
+--[[ Leyley's cheat V5.9 ]]--
 
-print("Leyley's cheat V5.8 loaded")
+print("Leyley's cheat V5.9 loaded")
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -13,7 +13,11 @@ local LocalPlayer = Players.LocalPlayer
 local Themes = {
     Default = { MainBg = Color3.fromRGB(20, 20, 25), PanelBg = Color3.fromRGB(30, 30, 38), Text = Color3.fromRGB(240, 240, 240), Accent = Color3.fromRGB(90, 130, 255), Success = Color3.fromRGB(60, 180, 90), Danger = Color3.fromRGB(220, 70, 70), Warning = Color3.fromRGB(220, 160, 50), Stroke = Color3.fromRGB(50, 50, 60) },
     Cyberpunk = { MainBg = Color3.fromRGB(15, 10, 25), PanelBg = Color3.fromRGB(25, 15, 40), Text = Color3.fromRGB(255, 255, 0), Accent = Color3.fromRGB(255, 0, 255), Success = Color3.fromRGB(0, 255, 255), Danger = Color3.fromRGB(255, 50, 50), Warning = Color3.fromRGB(255, 150, 0), Stroke = Color3.fromRGB(0, 255, 255) },
-    Ruby = { MainBg = Color3.fromRGB(25, 10, 10), PanelBg = Color3.fromRGB(40, 15, 15), Text = Color3.fromRGB(255, 200, 200), Accent = Color3.fromRGB(220, 50, 50), Success = Color3.fromRGB(50, 200, 100), Danger = Color3.fromRGB(180, 30, 30), Warning = Color3.fromRGB(200, 100, 30), Stroke = Color3.fromRGB(150, 40, 40) }
+    Ruby = { MainBg = Color3.fromRGB(25, 10, 10), PanelBg = Color3.fromRGB(40, 15, 15), Text = Color3.fromRGB(255, 200, 200), Accent = Color3.fromRGB(220, 50, 50), Success = Color3.fromRGB(50, 200, 100), Danger = Color3.fromRGB(180, 30, 30), Warning = Color3.fromRGB(200, 100, 30), Stroke = Color3.fromRGB(150, 40, 40) },
+    Synthwave = { MainBg = Color3.fromRGB(30, 15, 45), PanelBg = Color3.fromRGB(45, 25, 70), Text = Color3.fromRGB(255, 150, 220), Accent = Color3.fromRGB(0, 255, 255), Success = Color3.fromRGB(50, 255, 150), Danger = Color3.fromRGB(255, 50, 100), Warning = Color3.fromRGB(255, 180, 0), Stroke = Color3.fromRGB(255, 0, 150) },
+    Matrix = { MainBg = Color3.fromRGB(10, 15, 10), PanelBg = Color3.fromRGB(15, 25, 15), Text = Color3.fromRGB(100, 255, 100), Accent = Color3.fromRGB(50, 200, 50), Success = Color3.fromRGB(0, 255, 0), Danger = Color3.fromRGB(200, 50, 50), Warning = Color3.fromRGB(200, 200, 50), Stroke = Color3.fromRGB(30, 100, 30) },
+    RoyalGold = { MainBg = Color3.fromRGB(25, 20, 10), PanelBg = Color3.fromRGB(40, 35, 15), Text = Color3.fromRGB(255, 230, 150), Accent = Color3.fromRGB(255, 200, 50), Success = Color3.fromRGB(100, 255, 100), Danger = Color3.fromRGB(255, 80, 80), Warning = Color3.fromRGB(255, 150, 50), Stroke = Color3.fromRGB(150, 120, 40) },
+    Amethyst = { MainBg = Color3.fromRGB(20, 10, 30), PanelBg = Color3.fromRGB(35, 15, 50), Text = Color3.fromRGB(230, 200, 255), Accent = Color3.fromRGB(150, 80, 255), Success = Color3.fromRGB(80, 255, 180), Danger = Color3.fromRGB(255, 70, 120), Warning = Color3.fromRGB(255, 170, 50), Stroke = Color3.fromRGB(100, 40, 150) }
 }
 
 local SuffixDict = {}
@@ -91,8 +95,8 @@ local function ParsePrice(str)
 end
 
 local SolaraManager = {
-    GuiName = "LeyleysCheat_V5_8",
-    ActiveTab = "Game",
+    GuiName = "LeyleysCheat_V5_9",
+    ActiveTab = "Player",
     CurrentTheme = Themes.Default,
     
     ClickDelay = 0.1,
@@ -449,15 +453,20 @@ DexBtn.MouseButton1Click:Connect(function()
 end)
 
 CreateLabel(SettingsPage, "SettingsTitle", "UI THEME", UDim2.new(0.9,0,0.15,0), UDim2.new(0.05,0,0.05,0))
-local ThemeList = Instance.new("Frame", SettingsPage)
-ThemeList.Size = UDim2.new(0.9, 0, 0.6, 0)
+local ThemeList = Instance.new("ScrollingFrame", SettingsPage)
+ThemeList.Size = UDim2.new(0.9, 0, 0.7, 0)
 ThemeList.Position = UDim2.new(0.05, 0, 0.25, 0)
 ThemeList.BackgroundTransparency = 1
+ThemeList.ScrollBarThickness = 4
 
 local ThemeLayout = Instance.new("UIGridLayout", ThemeList)
-ThemeLayout.CellSize = UDim2.new(0.3, 0, 0.3, 0)
+ThemeLayout.CellSize = UDim2.new(0.3, 0, 0.25, 0)
 ThemeLayout.CellPadding = UDim2.new(0.03, 0, 0.05, 0)
 ThemeLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+ThemeLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    ThemeList.CanvasSize = UDim2.new(0, 0, 0, ThemeLayout.AbsoluteContentSize.Y + 10)
+end)
 
 local function MakeThemeButton(name, order)
     local btn, _ = CreateButton(ThemeList, name.."ThemeBtn", name, UDim2.new(), UDim2.new(), nil, "Panel")
@@ -468,6 +477,10 @@ end
 MakeThemeButton("Default", 1)
 MakeThemeButton("Cyberpunk", 2)
 MakeThemeButton("Ruby", 3)
+MakeThemeButton("Synthwave", 4)
+MakeThemeButton("Matrix", 5)
+MakeThemeButton("RoyalGold", 6)
+MakeThemeButton("Amethyst", 7)
 
 local GameSidebar = Instance.new("ScrollingFrame", GamePage)
 GameSidebar.Size = UDim2.new(0.3, 0, 0.9, 0)
@@ -478,6 +491,7 @@ table.insert(SolaraManager.ThemeObjects.Backgrounds, GameSidebar)
 
 local GameLayout = Instance.new("UIListLayout", GameSidebar)
 GameLayout.Padding = UDim.new(0.02, 0)
+GameLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
 local GameContentFrame = Instance.new("Frame", GamePage)
 GameContentFrame.Size = UDim2.new(0.63, 0, 0.9, 0)
@@ -675,12 +689,14 @@ CreateLabel(SoonConfig, "SoonTitle", "🚧 COMING SOON", UDim2.new(1,0,0.15,0), 
 CreateLabel(SoonConfig, "SoonDesc", "Next game script will go here.", UDim2.new(1,0,0.15,0), UDim2.new(0,0,0.2,0)).Font = Enum.Font.Gotham
 
 local TycoonLemonBtn, _ = CreateButton(GameSidebar, "TycoonLemonBtn", "Sell Lemons", UDim2.new(0.95,0,0,30), UDim2.new(), nil, "Panel")
+TycoonLemonBtn.LayoutOrder = 1
 TycoonLemonBtn.MouseButton1Click:Connect(function() SwitchGameConfig("SellLemons") end)
 
 local SoonBtn, _ = CreateButton(GameSidebar, "SoonBtn", "Coming Soon", UDim2.new(0.95,0,0,30), UDim2.new(), nil, "Panel")
+SoonBtn.LayoutOrder = 999
 SoonBtn.MouseButton1Click:Connect(function() SwitchGameConfig("ComingSoon") end)
 
-SwitchTab("Game")
+SwitchTab("Player")
 SwitchGameConfig("SellLemons")
 
 task.spawn(function()
@@ -726,22 +742,12 @@ task.spawn(function()
                             if upgradeBtn and upgradeBtn:IsA("GuiButton") then
                                 
                                 local priceNum = math.huge
-                                
-                                -- Recherche du prix exact
-                                for _, v in ipairs(child:GetDescendants()) do
-                                    if v:IsA("TextLabel") and (string.match(v.Text, "%$") or string.match(v.Name, "Price") or string.match(v.Name, "Cost")) then
-                                        local p = ParsePrice(v.Text)
-                                        if p ~= math.huge then
-                                            priceNum = p
-                                            break
-                                        end
+                                local priceObj = upgradeBtn:FindFirstChild("Price")
+                                if priceObj and (priceObj:IsA("TextLabel") or priceObj:IsA("TextBox")) then
+                                    local p = ParsePrice(priceObj.Text)
+                                    if p ~= math.huge then
+                                        priceNum = p
                                     end
-                                end
-                                
-                                -- Secours : si le prix est écrit sur le bouton lui-même
-                                if priceNum == math.huge then
-                                    local p = ParsePrice(upgradeBtn.Text)
-                                    if p ~= math.huge then priceNum = p end
                                 end
                                 
                                 -- Si on a l'argent (et qu'on a bien trouvé un prix valide)
