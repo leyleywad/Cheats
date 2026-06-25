@@ -1,6 +1,6 @@
---[[ Leyley's cheat V5.10 ]]--
+--[[ Leyley's cheat V5.11 ]]--
 
-print("Leyley's cheat V5.10 loaded")
+print("Leyley's cheat V5.11 loaded")
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -79,7 +79,7 @@ local function ParsePrice(str)
 end
 
 local SolaraManager = {
-    GuiName = "LeyleysCheat_V5_10",
+    GuiName = "LeyleysCheat_V5_11",
     ActiveTab = "Player",
     CurrentTheme = Themes.Default,
     
@@ -133,12 +133,6 @@ local function CreateButton(parent, name, text, size, pos, bgColor, themeGroup)
     btn.Text = text
     btn.Parent = parent
     
-    local padding = Instance.new("UIPadding", btn)
-    padding.PaddingLeft = UDim.new(0.05, 0)
-    padding.PaddingRight = UDim.new(0.05, 0)
-    padding.PaddingTop = UDim.new(0.1, 0)
-    padding.PaddingBottom = UDim.new(0.1, 0)
-    
     local corner = Instance.new("UICorner", btn)
     corner.CornerRadius = UDim.new(0.2, 0)
     
@@ -161,6 +155,38 @@ local function CreateButton(parent, name, text, size, pos, bgColor, themeGroup)
     btn.MouseLeave:Connect(function() ApplyTween(stroke, {Color = SolaraManager.CurrentTheme.Stroke}, 0.2) end)
     
     return btn, stroke
+end
+
+local function CreateThemeButton(parent, name, order)
+    local btn = Instance.new("TextButton")
+    btn.Name = name.."ThemeBtn"
+    btn.BackgroundColor3 = SolaraManager.CurrentTheme.PanelBg
+    btn.TextColor3 = SolaraManager.CurrentTheme.Text
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 14
+    btn.TextScaled = false
+    btn.Text = name
+    btn.Parent = parent
+    btn.LayoutOrder = order
+    
+    local corner = Instance.new("UICorner", btn)
+    corner.CornerRadius = UDim.new(0.2, 0)
+    
+    local stroke = Instance.new("UIStroke", btn)
+    stroke.Color = SolaraManager.CurrentTheme.Stroke
+    stroke.Thickness = 1
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    
+    table.insert(SolaraManager.ThemeObjects.Panels, btn)
+    table.insert(SolaraManager.ThemeObjects.Strokes, stroke)
+    table.insert(SolaraManager.ThemeObjects.Texts, btn)
+    
+    btn.MouseEnter:Connect(function() ApplyTween(stroke, {Color = SolaraManager.CurrentTheme.Text}, 0.2) end)
+    btn.MouseLeave:Connect(function() ApplyTween(stroke, {Color = SolaraManager.CurrentTheme.Stroke}, 0.2) end)
+    
+    btn.MouseButton1Click:Connect(function() UpdateTheme(name) end)
+    
+    return btn
 end
 
 local function CreateLabel(parent, name, text, size, pos)
@@ -458,7 +484,7 @@ ThemeList.BackgroundTransparency = 1
 ThemeList.ScrollBarThickness = 4
 
 local ThemeLayout = Instance.new("UIGridLayout", ThemeList)
-ThemeLayout.CellSize = UDim2.new(0.3, 0, 0.25, 0)
+ThemeLayout.CellSize = UDim2.new(0.3, 0, 0.2, 0) 
 ThemeLayout.CellPadding = UDim2.new(0.03, 0, 0.05, 0)
 ThemeLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
@@ -466,19 +492,13 @@ ThemeLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     ThemeList.CanvasSize = UDim2.new(0, 0, 0, ThemeLayout.AbsoluteContentSize.Y + 10)
 end)
 
-local function MakeThemeButton(name, order)
-    local btn, _ = CreateButton(ThemeList, name.."ThemeBtn", name, UDim2.new(), UDim2.new(), nil, "Panel")
-    btn.LayoutOrder = order
-    btn.MouseButton1Click:Connect(function() UpdateTheme(name) end)
-end
-
-MakeThemeButton("Default", 1)
-MakeThemeButton("Cyberpunk", 2)
-MakeThemeButton("Ruby", 3)
-MakeThemeButton("Synthwave", 4)
-MakeThemeButton("Matrix", 5)
-MakeThemeButton("RoyalGold", 6)
-MakeThemeButton("Amethyst", 7)
+CreateThemeButton(ThemeList, "Default", 1)
+CreateThemeButton(ThemeList, "Cyberpunk", 2)
+CreateThemeButton(ThemeList, "Ruby", 3)
+CreateThemeButton(ThemeList, "Synthwave", 4)
+CreateThemeButton(ThemeList, "Matrix", 5)
+CreateThemeButton(ThemeList, "RoyalGold", 6)
+CreateThemeButton(ThemeList, "Amethyst", 7)
 
 local GameSidebar = Instance.new("ScrollingFrame", GamePage)
 GameSidebar.Size = UDim2.new(0.3, 0, 0.9, 0)
@@ -754,24 +774,17 @@ task.spawn(function()
                                     end
                                     
                                     if currentCashNum > 0 and currentCashNum >= priceNum then
-                                        print("[DEBUG] Buying Upgrade:", child.Name, "| Price:", priceNum, "| Cash:", currentCashNum)
-                                        if firesignal then
-                                            pcall(function() firesignal(upgradeBtn.MouseButton1Click) end)
-                                            pcall(function() firesignal(upgradeBtn.Activated) end)
-                                        else
-                                            print("[DEBUG] 'firesignal' non detecté. Tentative avec getconnections.")
-                                            local clicked = false
-                                            if getconnections then
-                                                for _, conn in ipairs(getconnections(upgradeBtn.MouseButton1Click)) do
-                                                    conn.Function()
-                                                    clicked = true
-                                                end
-                                            end
-                                            if not clicked then
-                                                print("[DEBUG] getconnections a échoué. Le script ne peut pas forcer le clic.")
-                                            end
-                                        end
-                                        task.wait(0.1)
+                                        print("[DEBUG] Tentative d'achat via VirtualUser:", child.Name)
+                                        
+                                        local absPos = upgradeBtn.AbsolutePosition
+                                        local absSize = upgradeBtn.AbsoluteSize
+                                        local centerPoint = Vector2.new(absPos.X + (absSize.X / 2), absPos.Y + (absSize.Y / 2))
+                                        
+                                        VirtualUser:Button1Down(centerPoint)
+                                        task.wait(0.05)
+                                        VirtualUser:Button1Up(centerPoint)
+                                        
+                                        task.wait(0.1) 
                                     end
                                 end
                             end
