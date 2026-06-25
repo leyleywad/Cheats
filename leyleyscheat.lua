@@ -1,10 +1,10 @@
 --[[ 
-    Leyley's Premium Cheat V6.13 - THE COMPLETONIST UPDATE
-    - Added: SMART HYBRID mode (Auto switches between Farm and Buy based on current cash vs cheapest button price).
-    - Info: All themes, 100+ suffixes, ESP (Name+Health), config saving, and strict folders check are present.
+    Leyley's Premium Cheat V6.14 - THE COMPLETONIST UPDATE
+    - Fix: Safe Mode teleport altitude lowered by 10 studs (Y:93 instead of Y:103) to prevent visible falling/dropping and keep AFK cover intact.
+    - Info: Smart Hybrid, all themes, 100+ suffixes, ESP (Name+Health), config saving, and strict folders check are present.
 ]]--
 
-print("Leyley's Premium Cheat V6.13 loaded")
+print("Leyley's Premium Cheat V6.14 loaded")
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -68,7 +68,7 @@ end
 
 -- [ 3. STATE MANAGER ]
 local SolaraManager = {
-    GuiName = "LeyleysCheat_V6_13", CurrentThemeName = "Default", CurrentTheme = Themes.Default, ActiveTab = "Player",
+    GuiName = "LeyleysCheat_V6_14", CurrentThemeName = "Default", CurrentTheme = Themes.Default, ActiveTab = "Player",
     ThemeObjects = { Backgrounds={}, Panels={}, Accents={}, Strokes={}, Texts={}, Dividers={} },
     UI = { TabButtons={}, Pages={}, PlaylistInputs={}, Toggles={}, Inputs={}, Texts={} },
     IsClicking=false, IsAntiAfk=false, IsNoclip=false, IsESP=false, SpeedOverride=nil, JumpOverride=nil, SelectedTarget=nil,
@@ -144,7 +144,7 @@ local SG = Instance.new("ScreenGui"); SG.Name=SolaraManager.GuiName; SG.ResetOnS
 local ResB = Button(SG, "ResB", "➕ Open", UDim2.new(0,80,0,40), UDim2.new(0,20,1,-60), SolaraManager.CurrentTheme.Accent, "Accents"); ResB.Visible=false; ResB.ZIndex=10
 local Main = Frame(SG, "Main", UDim2.new(0,800,0,480), UDim2.new(0.5,-400,0.5,-240)); Main.ClipsDescendants=true; UICorner(Main,8); SolaraManager.UI.MainFrameStroke = UIStroke(Main, SolaraManager.CurrentTheme.Accent, 2)
 local TBar = Frame(Main, "TBar", UDim2.new(1,0,0,40), UDim2.new(), SolaraManager.CurrentTheme.PanelBg, "Panels"); Drag(Main, TBar)
-local TLbl = Label(TBar, "TLbl", "  ✨ Leyley's Premium Cheat V6.13", UDim2.new(1,-100,1,0), UDim2.new(), Enum.TextXAlignment.Left); TLbl.Font=Enum.Font.GothamBold
+local TLbl = Label(TBar, "TLbl", "  ✨ Leyley's Premium Cheat V6.14", UDim2.new(1,-100,1,0), UDim2.new(), Enum.TextXAlignment.Left); TLbl.Font=Enum.Font.GothamBold
 local ClsB = Button(TBar, "ClsB", "X", UDim2.new(0,30,0,30), UDim2.new(1,-35,0,5), SolaraManager.CurrentTheme.Danger, nil)
 local MinB = Button(TBar, "MinB", "-", UDim2.new(0,30,0,30), UDim2.new(1,-70,0,5), SolaraManager.CurrentTheme.Warning, nil)
 
@@ -325,7 +325,9 @@ task.spawn(function()
         
         local sMP=false; local aFS=SolaraManager.ActiveFarmState; local aBS=SolaraManager.ActiveBuyState; local aSS=SolaraManager.ActiveSmartState
         if #Players:GetPlayers()>1 and (aFS=="Safe" or aBS=="Safe" or aSS=="Safe") then
-            sMP=true; if not SolaraManager.HasSafetyRespawned and c and hrp then c:PivotTo(CFrame.new(0,103,0)); hrp.Velocity=Vector3.zero; hrp.RotVelocity=Vector3.zero; SolaraManager.HasSafetyRespawned=true end
+            sMP=true; 
+            -- FIXED: Teleports to Y: 93 instead of 103 so the player is strictly 10 studs lower, avoiding the drop animation.
+            if not SolaraManager.HasSafetyRespawned and c and hrp then c:PivotTo(CFrame.new(0,93,0)); hrp.Velocity=Vector3.zero; hrp.RotVelocity=Vector3.zero; SolaraManager.HasSafetyRespawned=true end
             local txt="Status: PAUSED (Player in server)"
             if aFS=="Safe" and SolaraManager.UI.FarmStatusLbl then SolaraManager.UI.FarmStatusLbl.Text=txt end
             if aBS=="Safe" and SolaraManager.UI.TycoonStatusLbl then SolaraManager.UI.TycoonStatusLbl.Text=txt end
