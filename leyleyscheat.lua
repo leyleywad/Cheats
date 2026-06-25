@@ -1,10 +1,10 @@
 --[[ 
-    Leyley's Premium Cheat V6.10 - THE PERFECT TYCOON FIX
-    - Fix: Tycoon Auto-Buy now strictly scans inside "Multiplier", "Multipliers", "Structure", and "Other" folders.
-    - Info: All themes, 100+ suffixes, and full config saving are present.
+    Leyley's Premium Cheat V6.11 - THE COMPLETONIST UPDATE
+    - Fix: Tycoon Auto-Buy status label now correctly displays the suffix (PriceMag) next to the price.
+    - Info: All themes, 100+ suffixes, full config saving, and strict folders check are present.
 ]]--
 
-print("Leyley's Premium Cheat V6.10 loaded")
+print("Leyley's Premium Cheat V6.11 loaded")
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -68,7 +68,7 @@ end
 
 -- [ 3. STATE MANAGER ]
 local SolaraManager = {
-    GuiName = "LeyleysCheat_V6_10", CurrentThemeName = "Default", CurrentTheme = Themes.Default, ActiveTab = "Player",
+    GuiName = "LeyleysCheat_V6_11", CurrentThemeName = "Default", CurrentTheme = Themes.Default, ActiveTab = "Player",
     ThemeObjects = { Backgrounds={}, Panels={}, Accents={}, Strokes={}, Texts={}, Dividers={} },
     UI = { TabButtons={}, Pages={}, PlaylistInputs={}, Toggles={}, Inputs={}, Texts={} },
     IsClicking=false, IsAntiAfk=false, IsNoclip=false, IsESP=false, SpeedOverride=nil, JumpOverride=nil, SelectedTarget=nil,
@@ -142,7 +142,7 @@ local SG = Instance.new("ScreenGui"); SG.Name=SolaraManager.GuiName; SG.ResetOnS
 local ResB = Button(SG, "ResB", "➕ Open", UDim2.new(0,80,0,40), UDim2.new(0,20,1,-60), SolaraManager.CurrentTheme.Accent, "Accents"); ResB.Visible=false; ResB.ZIndex=10
 local Main = Frame(SG, "Main", UDim2.new(0,800,0,480), UDim2.new(0.5,-400,0.5,-240)); Main.ClipsDescendants=true; UICorner(Main,8); SolaraManager.UI.MainFrameStroke = UIStroke(Main, SolaraManager.CurrentTheme.Accent, 2)
 local TBar = Frame(Main, "TBar", UDim2.new(1,0,0,40), UDim2.new(), SolaraManager.CurrentTheme.PanelBg, "Panels"); Drag(Main, TBar)
-local TLbl = Label(TBar, "TLbl", "  ✨ Leyley's Premium Cheat V6.10", UDim2.new(1,-100,1,0), UDim2.new(), Enum.TextXAlignment.Left); TLbl.Font=Enum.Font.GothamBold
+local TLbl = Label(TBar, "TLbl", "  ✨ Leyley's Premium Cheat V6.11", UDim2.new(1,-100,1,0), UDim2.new(), Enum.TextXAlignment.Left); TLbl.Font=Enum.Font.GothamBold
 local ClsB = Button(TBar, "ClsB", "X", UDim2.new(0,30,0,30), UDim2.new(1,-35,0,5), SolaraManager.CurrentTheme.Danger, nil)
 local MinB = Button(TBar, "MinB", "-", UDim2.new(0,30,0,30), UDim2.new(1,-70,0,5), SolaraManager.CurrentTheme.Warning, nil)
 
@@ -324,9 +324,22 @@ task.spawn(function()
                 pcall(function()
                     if not SolaraManager.MyTycoon then for _,fol in ipairs(workspace:GetChildren()) do local oV=fol:FindFirstChild("Owner"); if oV and string.lower(oV:IsA("ObjectValue") and oV.Value and oV.Value.Name or oV:IsA("StringValue") and oV.Value or "")==string.lower(LocalPlayer.Name) then SolaraManager.MyTycoon=fol; break end end end
                     if SolaraManager.MyTycoon then
-                        local bL={}; local function sB(m) if m and m:FindFirstChild("Button") and m.Button:IsA("BasePart") then local g=m.Button:FindFirstChild("Gui") or m:FindFirstChild("Gui"); if g and g:FindFirstChild("Price") then local p=ParsePrice((g.Price:IsA("ValueBase") and tostring(g.Price.Value) or g.Price.Text)..(g:FindFirstChild("PriceMag") and (g.PriceMag:IsA("ValueBase") and tostring(g.PriceMag.Value) or g.PriceMag.Text) or "")); if p>=0 and p~=math.huge then table.insert(bL, {Part=m.Button, Price=p, Raw=g.Price.Text}) end end end end
+                        local bL={}; 
                         
-                        -- FIX: Strict category folder scanning restored
+                        -- FIX: Extract string with suffix properly for UI Display
+                        local function sB(m) 
+                            if m and m:FindFirstChild("Button") and m.Button:IsA("BasePart") then 
+                                local g=m.Button:FindFirstChild("Gui") or m:FindFirstChild("Gui"); 
+                                if g and g:FindFirstChild("Price") then 
+                                    local pT=(g.Price:IsA("ValueBase") and tostring(g.Price.Value) or g.Price.Text)
+                                    local mT=(g:FindFirstChild("PriceMag") and (g.PriceMag:IsA("ValueBase") and tostring(g.PriceMag.Value) or g.PriceMag.Text) or "")
+                                    local rT=pT..mT
+                                    local p=ParsePrice(rT); 
+                                    if p>=0 and p~=math.huge then table.insert(bL, {Part=m.Button, Price=p, Raw=rT}) end 
+                                end 
+                            end 
+                        end
+                        
                         if SolaraManager.MyTycoon:FindFirstChild("Purchases") then 
                             local cats = {Structure=true, Other=true, Multiplier=true, Multipliers=true}
                             for _,sf in ipairs(SolaraManager.MyTycoon.Purchases:GetChildren()) do 
