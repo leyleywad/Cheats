@@ -1,14 +1,15 @@
 --[[ 
-    Leyley's Premium Cheat V6.6
-    - Fix: Cash display to Scientific Notation (e.g. 1.25e+51)
-    - Fix: Moon Dex Explorer integrated
-    - Add: Dedicated Music Tab
-    - Add: Playlist Manager (Max 5)
-    - Add: Save/Load Config System (JSON) with Playlists
-    - Architecture: Ultra-Aérée (1 instruction par ligne) + Scoped Limits
+    Leyley's Premium Cheat V6.7
+    - Fix: Load Config fully updates UI
+    - Fix: Toggle Colors (Red/Green ONLY for Default theme, Accent/Panel for others)
+    - Enhance: Width expanded (650 -> 750) to fix clipping
+    - Add: New themes (Dracula, Ocean, Midnight, Hacker)
+    - Add: ESP System (Other Players) & Noclip System
+    - Enhance: Aggressive Mute Loop
+    - Architecture: 1 instruction/line & Strict Limit Scoping
 ]]--
 
-print("Leyley's Premium Cheat V6.6 loaded")
+print("Leyley's Premium Cheat V6.7 loaded")
 
 -------------------------------------------------------------------------------
 -- 1. SERVICES GLOBAUX
@@ -39,6 +40,50 @@ local Themes = {
         Danger = Color3.fromRGB(220, 70, 70), 
         Warning = Color3.fromRGB(220, 160, 50), 
         Stroke = Color3.fromRGB(60, 60, 75), 
+        Group = "Color" 
+    },
+    Dracula = { 
+        MainBg = Color3.fromRGB(40, 42, 54), 
+        PanelBg = Color3.fromRGB(68, 71, 90), 
+        Text = Color3.fromRGB(248, 248, 242), 
+        Accent = Color3.fromRGB(255, 121, 198), 
+        Success = Color3.fromRGB(80, 250, 123), 
+        Danger = Color3.fromRGB(255, 85, 85), 
+        Warning = Color3.fromRGB(241, 250, 140), 
+        Stroke = Color3.fromRGB(98, 114, 164), 
+        Group = "Color" 
+    },
+    Ocean = { 
+        MainBg = Color3.fromRGB(10, 25, 47), 
+        PanelBg = Color3.fromRGB(17, 34, 64), 
+        Text = Color3.fromRGB(204, 214, 246), 
+        Accent = Color3.fromRGB(100, 255, 218), 
+        Success = Color3.fromRGB(0, 200, 150), 
+        Danger = Color3.fromRGB(255, 100, 100), 
+        Warning = Color3.fromRGB(255, 200, 0), 
+        Stroke = Color3.fromRGB(45, 55, 72), 
+        Group = "Color" 
+    },
+    Midnight = { 
+        MainBg = Color3.fromRGB(10, 10, 15), 
+        PanelBg = Color3.fromRGB(20, 20, 25), 
+        Text = Color3.fromRGB(220, 220, 230), 
+        Accent = Color3.fromRGB(120, 120, 255), 
+        Success = Color3.fromRGB(50, 255, 100), 
+        Danger = Color3.fromRGB(255, 50, 50), 
+        Warning = Color3.fromRGB(255, 255, 50), 
+        Stroke = Color3.fromRGB(40, 40, 50), 
+        Group = "Color" 
+    },
+    Hacker = { 
+        MainBg = Color3.fromRGB(0, 5, 0), 
+        PanelBg = Color3.fromRGB(5, 15, 5), 
+        Text = Color3.fromRGB(50, 255, 50), 
+        Accent = Color3.fromRGB(0, 200, 0), 
+        Success = Color3.fromRGB(100, 255, 100), 
+        Danger = Color3.fromRGB(200, 0, 0), 
+        Warning = Color3.fromRGB(200, 200, 0), 
+        Stroke = Color3.fromRGB(0, 50, 0), 
         Group = "Color" 
     },
     Cyberpunk = { 
@@ -146,7 +191,7 @@ local Themes = {
 -- 3. GESTIONNAIRE D'ÉTATS (MANAGER)
 -------------------------------------------------------------------------------
 local SolaraManager = {
-    GuiName = "LeyleysCheat_V6_6",
+    GuiName = "LeyleysCheat_V6_7",
     CurrentTheme = Themes.Default,
     CurrentThemeName = "Default",
     ActiveTab = "Player",
@@ -169,11 +214,15 @@ local SolaraManager = {
         MainFrameStroke = nil,
         TabButtons = {},
         Pages = {},
-        PlaylistInputs = {}
+        PlaylistInputs = {},
+        Toggles = {}
     },
     
     IsClicking = false, 
     IsAntiAfk = false, 
+    IsNoclip = false,
+    IsESP = false,
+    
     SpeedOverride = nil, 
     JumpOverride = nil, 
     SelectedTarget = nil,
@@ -270,39 +319,26 @@ end
 GenerateSuffixes()
 
 local function ParsePrice(str)
-    if not str then 
-        return math.huge 
-    end
+    if not str then return math.huge end
     
     local lowerStr = string.lower(tostring(str))
     
     local isFree = string.match(lowerStr, "free")
     local isGratuit = string.match(lowerStr, "gratuit")
     
-    if isFree then 
-        return 0 
-    end
-    
-    if isGratuit then 
-        return 0 
-    end
+    if isFree then return 0 end
+    if isGratuit then return 0 end
     
     local sciNum = tonumber(lowerStr)
-    if sciNum then 
-        return sciNum 
-    end
+    if sciNum then return sciNum end
     
     local cleanedStr = string.gsub(lowerStr, "[^%d%.%a]", "") 
     local numStr, suffix = string.match(cleanedStr, "^([%d%.]+)(%a*)$")
     
-    if not numStr then 
-        return math.huge 
-    end
+    if not numStr then return math.huge end
     
     local num = tonumber(numStr)
-    if not num then 
-        return math.huge 
-    end
+    if not num then return math.huge end
     
     if suffix then
         local isEmpty = (suffix == "")
@@ -324,19 +360,13 @@ end
 
 local function FormatNumber(num)
     local isTypeNum = (type(num) == "number")
-    if not isTypeNum then 
-        return "0" 
-    end
+    if not isTypeNum then return "0" end
     
     local isNaN = (num ~= num)
-    if isNaN then 
-        return "0" 
-    end
+    if isNaN then return "0" end
     
     local isInf = (num == math.huge)
-    if isInf then 
-        return "0" 
-    end
+    if isInf then return "0" end
     
     local isSmall = (num < 1000)
     if isSmall then 
@@ -350,7 +380,7 @@ local function FormatNumber(num)
 end
 
 -------------------------------------------------------------------------------
--- 5. FONCTIONS DE CRÉATION D'INTERFACE
+-- 5. FONCTIONS DE CRÉATION & THEMES MOTEUR
 -------------------------------------------------------------------------------
 do
     local existingGuiCore = CoreGui:FindFirstChild(SolaraManager.GuiName)
@@ -562,9 +592,7 @@ local function EnableDragging(frame, dragHandle)
             
             input.Changed:Connect(function()
                 local isEnd = (input.UserInputState == Enum.UserInputState.End)
-                if isEnd then
-                    dragging = false
-                end
+                if isEnd then dragging = false end
             end)
         end
     end)
@@ -573,9 +601,7 @@ local function EnableDragging(frame, dragHandle)
         local isMouseMove = (input.UserInputType == Enum.UserInputType.MouseMovement)
         local isTouchMove = (input.UserInputType == Enum.UserInputType.Touch)
         
-        if isMouseMove or isTouchMove then
-            dragInput = input
-        end
+        if isMouseMove or isTouchMove then dragInput = input end
     end)
     
     UserInputService.InputChanged:Connect(function(input)
@@ -595,6 +621,221 @@ local function EnableDragging(frame, dragHandle)
             frame.Position = newPosition
         end
     end)
+end
+
+SolaraManager.UpdateTogglesVisuals = function()
+    local isD = (SolaraManager.CurrentThemeName == "Default")
+    local sT = SolaraManager.CurrentTheme
+    local tL = SolaraManager.UI.Toggles
+    
+    local function GetCol(s)
+        if s then 
+            if isD then return sT.Success else return sT.Accent end
+        else
+            if isD then return sT.Danger else return sT.PanelBg end
+        end
+    end
+    
+    do
+        local btn = tL.Click
+        if btn then
+            local st = SolaraManager.IsClicking
+            local c = GetCol(st)
+            local p = {}
+            p.BackgroundColor3 = c
+            ApplyTween(btn, p, 0.2)
+        end
+    end
+    
+    do
+        local btn = tL.Afk
+        if btn then
+            local st = SolaraManager.IsAntiAfk
+            local c = GetCol(st)
+            local p = {}
+            p.BackgroundColor3 = c
+            ApplyTween(btn, p, 0.2)
+        end
+    end
+    
+    do
+        local btn = tL.Noclip
+        if btn then
+            local st = SolaraManager.IsNoclip
+            local c = GetCol(st)
+            local p = {}
+            p.BackgroundColor3 = c
+            ApplyTween(btn, p, 0.2)
+        end
+    end
+    
+    do
+        local btn = tL.Esp
+        if btn then
+            local st = SolaraManager.IsESP
+            local c = GetCol(st)
+            local p = {}
+            p.BackgroundColor3 = c
+            ApplyTween(btn, p, 0.2)
+        end
+    end
+    
+    do
+        local btn = tL.Mute
+        if btn then
+            local st = SolaraManager.MuteGameAudio
+            local c = GetCol(st)
+            local p = {}
+            p.BackgroundColor3 = c
+            ApplyTween(btn, p, 0.2)
+        end
+    end
+    
+    do
+        local btn = tL.Farm
+        if btn then
+            local fS = SolaraManager.ActiveFarmState
+            local st = (fS == "Normal")
+            local c = GetCol(st)
+            local p = {}
+            p.BackgroundColor3 = c
+            ApplyTween(btn, p, 0.2)
+        end
+    end
+    
+    do
+        local btn = tL.SafeFarm
+        if btn then
+            local fS = SolaraManager.ActiveFarmState
+            local st = (fS == "Safe")
+            local c = GetCol(st)
+            local p = {}
+            p.BackgroundColor3 = c
+            ApplyTween(btn, p, 0.2)
+        end
+    end
+    
+    do
+        local btn = tL.Buy
+        if btn then
+            local bS = SolaraManager.ActiveBuyState
+            local st = (bS == "Normal")
+            local c = GetCol(st)
+            local p = {}
+            p.BackgroundColor3 = c
+            ApplyTween(btn, p, 0.2)
+        end
+    end
+    
+    do
+        local btn = tL.SafeBuy
+        if btn then
+            local bS = SolaraManager.ActiveBuyState
+            local st = (bS == "Safe")
+            local c = GetCol(st)
+            local p = {}
+            p.BackgroundColor3 = c
+            ApplyTween(btn, p, 0.2)
+        end
+    end
+end
+
+SolaraManager.ApplyTheme = function(tName)
+    local sT = Themes[tName]
+    if not sT then return end
+    
+    SolaraManager.CurrentTheme = sT
+    SolaraManager.CurrentThemeName = tName
+    
+    do
+        local bgA = SolaraManager.ThemeObjects.Backgrounds
+        for _, bObj in ipairs(bgA) do 
+            if bObj.Parent then 
+                local p = {}
+                p.BackgroundColor3 = sT.MainBg
+                ApplyTween(bObj, p, 0.5) 
+            end 
+        end
+    end
+    
+    do
+        local pnlA = SolaraManager.ThemeObjects.Panels
+        for _, pObj in ipairs(pnlA) do 
+            if pObj.Parent then 
+                local p = {}
+                p.BackgroundColor3 = sT.PanelBg
+                ApplyTween(pObj, p, 0.5) 
+            end 
+        end
+    end
+    
+    do
+        local accA = SolaraManager.ThemeObjects.Accents
+        for _, aObj in ipairs(accA) do 
+            if aObj.Parent then 
+                local p = {}
+                p.BackgroundColor3 = sT.Accent
+                ApplyTween(aObj, p, 0.5) 
+            end 
+        end
+    end
+    
+    do
+        local strA = SolaraManager.ThemeObjects.Strokes
+        for _, sObj in ipairs(strA) do 
+            if sObj.Parent then 
+                local p = {}
+                p.Color = sT.Stroke
+                ApplyTween(sObj, p, 0.5) 
+            end 
+        end
+    end
+    
+    do
+        local divA = SolaraManager.ThemeObjects.Dividers
+        for _, dObj in ipairs(divA) do 
+            if dObj.Parent then 
+                local p = {}
+                p.BackgroundColor3 = sT.Stroke
+                ApplyTween(dObj, p, 0.5) 
+            end 
+        end
+    end
+    
+    do
+        local txtA = SolaraManager.ThemeObjects.Texts
+        for _, tObj in ipairs(txtA) do 
+            if tObj.Parent then 
+                local p = {}
+                p.TextColor3 = sT.Text
+                ApplyTween(tObj, p, 0.5) 
+            end 
+        end
+    end
+    
+    do
+        local mS = SolaraManager.UI.MainFrameStroke
+        if mS then 
+            local p = {}
+            p.Color = sT.Accent
+            ApplyTween(mS, p, 0.5) 
+        end
+    end
+    
+    do
+        local tbTbl = SolaraManager.UI.TabButtons
+        for lTN, tBtn in pairs(tbTbl) do 
+            local isA = (lTN == SolaraManager.ActiveTab)
+            local tC
+            if isA then tC = sT.Accent else tC = sT.PanelBg end
+            local p = {}
+            p.BackgroundColor3 = tC
+            ApplyTween(tBtn, p, 0.5) 
+        end
+    end
+    
+    local upF = SolaraManager.UpdateTogglesVisuals
+    if upF then upF() end
 end
 
 -------------------------------------------------------------------------------
@@ -628,8 +869,8 @@ do
     RestoreBtn.Visible = false
     RestoreBtn.ZIndex = 10
     
-    local mainSize = UDim2.new(0, 650, 0, 420)
-    local mainPos = UDim2.new(0.5, -325, 0.5, -210)
+    local mainSize = UDim2.new(0, 750, 0, 450)
+    local mainPos = UDim2.new(0.5, -375, 0.5, -225)
     local mainBg = SolaraManager.CurrentTheme.MainBg
     
     MainFrame = CreateFrame(ScreenGui, "MainFrame", mainSize, mainPos, mainBg, "Backgrounds")
@@ -649,7 +890,7 @@ do
     
     local lblSize = UDim2.new(1, -100, 1, 0)
     local lblPos = UDim2.new(0, 0, 0, 0)
-    local TitleLabel = CreateLabel(TitleBar, "TitleLabel", "  ✨ Leyley's Premium Cheat V6.6", lblSize, lblPos, Enum.TextXAlignment.Left)
+    local TitleLabel = CreateLabel(TitleBar, "TitleLabel", "  ✨ Leyley's Premium Cheat V6.7", lblSize, lblPos, Enum.TextXAlignment.Left)
     TitleLabel.Font = Enum.Font.GothamBold
     
     local closeSize = UDim2.new(0, 30, 0, 30)
@@ -669,13 +910,13 @@ do
     
     MinBtn.MouseButton1Click:Connect(function() 
         local minProps = {}
-        minProps.Size = UDim2.new(0, 650, 0, 0)
+        minProps.Size = UDim2.new(0, 750, 0, 0)
         local t = ApplyTween(MainFrame, minProps, 0.3)
         t.Completed:Connect(function() 
             MainFrame.Visible = false
             RestoreBtn.Visible = true
             
-            local resetSize = UDim2.new(0, 650, 0, 420)
+            local resetSize = UDim2.new(0, 750, 0, 450)
             MainFrame.Size = resetSize 
         end) 
     end)
@@ -683,16 +924,16 @@ do
     RestoreBtn.MouseButton1Click:Connect(function() 
         RestoreBtn.Visible = false
         
-        local startSize = UDim2.new(0, 650, 0, 0)
+        local startSize = UDim2.new(0, 750, 0, 0)
         MainFrame.Size = startSize
         MainFrame.Visible = true
         
         local endProps = {}
-        endProps.Size = UDim2.new(0, 650, 0, 420)
+        endProps.Size = UDim2.new(0, 750, 0, 450)
         ApplyTween(MainFrame, endProps, 0.4) 
     end)
     
-    local sideSize = UDim2.new(0, 150, 1, -40)
+    local sideSize = UDim2.new(0, 160, 1, -40)
     local sidePos = UDim2.new(0, 0, 0, 40)
     local sideBg = SolaraManager.CurrentTheme.PanelBg
     local SidebarContainer = CreateFrame(MainFrame, "SidebarContainer", sideSize, sidePos, sideBg, "Panels")
@@ -726,8 +967,8 @@ do
     sbPad.PaddingLeft = pad10
     sbPad.PaddingRight = pad10
     
-    local contSize = UDim2.new(1, -150, 1, -40)
-    local contPos = UDim2.new(0, 150, 0, 40)
+    local contSize = UDim2.new(1, -160, 1, -40)
+    local contPos = UDim2.new(0, 160, 0, 40)
     local contBg = SolaraManager.CurrentTheme.MainBg
     ContentArea = CreateFrame(MainFrame, "ContentArea", contSize, contPos, contBg, "Backgrounds")
     
@@ -803,7 +1044,7 @@ local function BuildPage(name, icon, order)
 end
 
 -------------------------------------------------------------------------------
--- PAGE 1 : PLAYER
+-- PAGE 1 : PLAYER (MODIFIERS + NOCLIP + ESP)
 -------------------------------------------------------------------------------
 do
     local PlayerPage = BuildPage("Player", "👤", 1)
@@ -828,13 +1069,15 @@ do
     
     local cTogSize = UDim2.new(0.48, -2, 1, 0)
     local cTogPos = UDim2.new(0, 0, 0, 0)
-    local cTogCol = SolaraManager.CurrentTheme.Danger
+    local cTogCol = SolaraManager.CurrentTheme.PanelBg
     local ClickToggle = CreateButton(ClickRow, "ClickToggle", "Auto Clicker: OFF", cTogSize, cTogPos, cTogCol)
+    SolaraManager.UI.Toggles.Click = ClickToggle
     
     local aTogSize = UDim2.new(0.48, -2, 1, 0)
     local aTogPos = UDim2.new(0.52, 2, 0, 0)
-    local aTogCol = SolaraManager.CurrentTheme.Danger
+    local aTogCol = SolaraManager.CurrentTheme.PanelBg
     local AfkToggle = CreateButton(ClickRow, "AfkToggle", "Anti-AFK: OFF", aTogSize, aTogPos, aTogCol)
+    SolaraManager.UI.Toggles.Afk = AfkToggle
     
     ClickToggle.MouseButton1Click:Connect(function() 
         local cState = SolaraManager.IsClicking
@@ -845,11 +1088,7 @@ do
         if nState then nText = "Auto Clicker: ON" else nText = "Auto Clicker: OFF" end
         ClickToggle.Text = nText
         
-        local tCol
-        if nState then tCol = SolaraManager.CurrentTheme.Success else tCol = SolaraManager.CurrentTheme.Danger end
-        local p = {}
-        p.BackgroundColor3 = tCol
-        ApplyTween(ClickToggle, p) 
+        SolaraManager.UpdateTogglesVisuals()
     end)
     
     AfkToggle.MouseButton1Click:Connect(function() 
@@ -861,23 +1100,43 @@ do
         if nState then nText = "Anti-AFK: ON" else nText = "Anti-AFK: OFF" end
         AfkToggle.Text = nText
         
-        local tCol
-        if nState then tCol = SolaraManager.CurrentTheme.Success else tCol = SolaraManager.CurrentTheme.Danger end
-        local p = {}
-        p.BackgroundColor3 = tCol
-        ApplyTween(AfkToggle, p) 
+        SolaraManager.UpdateTogglesVisuals()
+    end)
+    
+    local nRowSize = UDim2.new(1, 0, 0, 40)
+    local nRowPos = UDim2.new()
+    local NcRow = CreateFrame(PlayerPage, "NcRow", nRowSize, nRowPos, nil, "Backgrounds")
+    NcRow.BackgroundTransparency = 1
+    NcRow.LayoutOrder = 3
+    
+    local ncTogSize = UDim2.new(1, -4, 1, 0)
+    local ncTogPos = UDim2.new()
+    local ncTogCol = SolaraManager.CurrentTheme.PanelBg
+    local NoclipToggle = CreateButton(NcRow, "NoclipToggle", "Noclip: OFF", ncTogSize, ncTogPos, ncTogCol)
+    SolaraManager.UI.Toggles.Noclip = NoclipToggle
+    
+    NoclipToggle.MouseButton1Click:Connect(function() 
+        local cState = SolaraManager.IsNoclip
+        local nState = not cState
+        SolaraManager.IsNoclip = nState
+        
+        local nText
+        if nState then nText = "Noclip: ON" else nText = "Noclip: OFF" end
+        NoclipToggle.Text = nText
+        
+        SolaraManager.UpdateTogglesVisuals()
     end)
     
     local sTitleSize = UDim2.new(1, 0, 0, 25)
     local sTitlePos = UDim2.new()
     local sTitle = CreateLabel(PlayerPage, "StatsTitle", "STAT OVERRIDES", sTitleSize, sTitlePos, Enum.TextXAlignment.Left)
-    sTitle.LayoutOrder = 3
+    sTitle.LayoutOrder = 4
     
     local spRowSize = UDim2.new(1, 0, 0, 35)
     local spRowPos = UDim2.new()
     local SpeedRow = CreateFrame(PlayerPage, "SpeedRow", spRowSize, spRowPos, nil, "Backgrounds")
     SpeedRow.BackgroundTransparency = 1
-    SpeedRow.LayoutOrder = 4
+    SpeedRow.LayoutOrder = 5
     
     local spInpSize = UDim2.new(0.65, -5, 1, 0)
     local spInpPos = UDim2.new(0, 0, 0, 0)
@@ -904,7 +1163,7 @@ do
     local jRowPos = UDim2.new()
     local JumpRow = CreateFrame(PlayerPage, "JumpRow", jRowSize, jRowPos, nil, "Backgrounds")
     JumpRow.BackgroundTransparency = 1
-    JumpRow.LayoutOrder = 5
+    JumpRow.LayoutOrder = 6
     
     local jInpSize = UDim2.new(0.65, -5, 1, 0)
     local jInpPos = UDim2.new(0, 0, 0, 0)
@@ -925,6 +1184,35 @@ do
             SolaraManager.JumpOverride = nil
             JumpBtn.Text = "Reset" 
         end 
+    end)
+    
+    local oTitleSize = UDim2.new(1, 0, 0, 25)
+    local oTitlePos = UDim2.new()
+    local oTitle = CreateLabel(PlayerPage, "OtherTitle", "OTHER PLAYERS", oTitleSize, oTitlePos, Enum.TextXAlignment.Left)
+    oTitle.LayoutOrder = 7
+    
+    local eRowSize = UDim2.new(1, 0, 0, 40)
+    local eRowPos = UDim2.new()
+    local EspRow = CreateFrame(PlayerPage, "EspRow", eRowSize, eRowPos, nil, "Backgrounds")
+    EspRow.BackgroundTransparency = 1
+    EspRow.LayoutOrder = 8
+    
+    local eTogSize = UDim2.new(1, -4, 1, 0)
+    local eTogPos = UDim2.new()
+    local eTogCol = SolaraManager.CurrentTheme.PanelBg
+    local EspToggle = CreateButton(EspRow, "EspToggle", "Player ESP: OFF", eTogSize, eTogPos, eTogCol)
+    SolaraManager.UI.Toggles.Esp = EspToggle
+    
+    EspToggle.MouseButton1Click:Connect(function() 
+        local cState = SolaraManager.IsESP
+        local nState = not cState
+        SolaraManager.IsESP = nState
+        
+        local nText
+        if nState then nText = "Player ESP: ON" else nText = "Player ESP: OFF" end
+        EspToggle.Text = nText
+        
+        SolaraManager.UpdateTogglesVisuals()
     end)
 end
 
@@ -1214,13 +1502,15 @@ do
     
     local fBSize = UDim2.new(0.5, -5, 1, 0)
     local fBPos = UDim2.new()
-    local fBCol = SolaraManager.CurrentTheme.Danger
+    local fBCol = SolaraManager.CurrentTheme.PanelBg
     local FarmBtn = CreateButton(FarmActionRow, "FarmBtn", "Normal Farm", fBSize, fBPos, fBCol)
+    SolaraManager.UI.Toggles.Farm = FarmBtn
     
     local sfBSize = UDim2.new(0.5, -5, 1, 0)
     local sfBPos = UDim2.new(0.5, 5, 0, 0)
-    local sfBCol = SolaraManager.CurrentTheme.Danger
+    local sfBCol = SolaraManager.CurrentTheme.PanelBg
     local SafeFarmBtn = CreateButton(FarmActionRow, "SafeFarmBtn", "Safe Farm", sfBSize, sfBPos, sfBCol)
+    SolaraManager.UI.Toggles.SafeFarm = SafeFarmBtn
     
     local d1Size = UDim2.new(1, -10, 0, 2)
     local d1Pos = UDim2.new()
@@ -1266,13 +1556,15 @@ do
     
     local abBtnSize = UDim2.new(0.5, -5, 1, 0)
     local abBtnPos = UDim2.new()
-    local abBtnCol = SolaraManager.CurrentTheme.Danger
+    local abBtnCol = SolaraManager.CurrentTheme.PanelBg
     local AutoBuyBtn = CreateButton(BuyActionRow, "AutoBuyBtn", "Auto Buy", abBtnSize, abBtnPos, abBtnCol)
+    SolaraManager.UI.Toggles.Buy = AutoBuyBtn
     
     local sbBtnSize = UDim2.new(0.5, -5, 1, 0)
     local sbBtnPos = UDim2.new(0.5, 5, 0, 0)
-    local sbBtnCol = SolaraManager.CurrentTheme.Danger
+    local sbBtnCol = SolaraManager.CurrentTheme.PanelBg
     local SafeBuyBtn = CreateButton(BuyActionRow, "SafeBuyBtn", "Safe Buy", sbBtnSize, sbBtnPos, sbBtnCol)
+    SolaraManager.UI.Toggles.SafeBuy = SafeBuyBtn
     
     -- COMING SOON
     local ComingSoonFrame = Instance.new("Frame")
@@ -1328,27 +1620,7 @@ do
     end)
     
     local function UpdateGameUI()
-        local isNF = (SolaraManager.ActiveFarmState == "Normal")
-        local isSF = (SolaraManager.ActiveFarmState == "Safe")
-        
-        local fCol
-        if isNF then fCol = SolaraManager.CurrentTheme.Success else fCol = SolaraManager.CurrentTheme.Danger end
-        FarmBtn.BackgroundColor3 = fCol
-        
-        local sfCol
-        if isSF then sfCol = SolaraManager.CurrentTheme.Success else sfCol = SolaraManager.CurrentTheme.Danger end
-        SafeFarmBtn.BackgroundColor3 = sfCol
-        
-        local isNB = (SolaraManager.ActiveBuyState == "Normal")
-        local isSB = (SolaraManager.ActiveBuyState == "Safe")
-        
-        local bCol
-        if isNB then bCol = SolaraManager.CurrentTheme.Success else bCol = SolaraManager.CurrentTheme.Danger end
-        AutoBuyBtn.BackgroundColor3 = bCol
-        
-        local sbCol
-        if isSB then sbCol = SolaraManager.CurrentTheme.Success else sbCol = SolaraManager.CurrentTheme.Danger end
-        SafeBuyBtn.BackgroundColor3 = sbCol
+        SolaraManager.UpdateTogglesVisuals()
         
         local isFOff = (SolaraManager.ActiveFarmState == "Off")
         if isFOff then 
@@ -1475,12 +1747,13 @@ do
     
     local mtBtnSize = UDim2.new(1, -6, 1, 0)
     local mtBtnPos = UDim2.new()
-    local mtBtnCol = SolaraManager.CurrentTheme.Danger
-    local MuteBtn = CreateButton(MusicRow1, "MuteBtn", "Mute Game Audio: OFF (WIP - Doesn't work)", mtBtnSize, mtBtnPos, mtBtnCol)
+    local mtBtnCol = SolaraManager.CurrentTheme.PanelBg
+    local MuteBtn = CreateButton(MusicRow1, "MuteBtn", "Mute Game Audio: OFF (WIP - Trying Harder)", mtBtnSize, mtBtnPos, mtBtnCol)
+    SolaraManager.UI.Toggles.Mute = MuteBtn
     
     local lblDisSize = UDim2.new(1, 0, 0, 15)
     local lblDisPos = UDim2.new()
-    local lblDisText = "* Note: Roblox blocks global sound muting via exploit currently."
+    local lblDisText = "* Note: Roblox blocks global sound muting. Aggressive loop enabled."
     local MuteDis = CreateLabel(MusScroll, "MuteDis", lblDisText, lblDisSize, lblDisPos, Enum.TextXAlignment.Left)
     MuteDis.LayoutOrder = 3
     MuteDis.TextSize = 10
@@ -1634,14 +1907,10 @@ do
         SolaraManager.MuteGameAudio = nMute
         
         local nText
-        if nMute then nText = "Mute Game Audio: ON (WIP - Doesn't work)" else nText = "Mute Game Audio: OFF (WIP - Doesn't work)" end
+        if nMute then nText = "Mute Game Audio: ON (WIP - Trying Harder)" else nText = "Mute Game Audio: OFF (WIP - Trying Harder)" end
         MuteBtn.Text = nText
         
-        local nCol
-        if nMute then nCol = SolaraManager.CurrentTheme.Success else nCol = SolaraManager.CurrentTheme.Danger end
-        local p = {}
-        p.BackgroundColor3 = nCol
-        ApplyTween(MuteBtn, p)
+        SolaraManager.UpdateTogglesVisuals()
         
         if not nMute then
             local wsDesc = workspace:GetDescendants()
@@ -1828,13 +2097,6 @@ do
                 local jsonStr = readfile(SolaraManager.ConfigFilename)
                 local cData = HttpService:JSONDecode(jsonStr)
                 if cData then
-                    if cData.Theme then 
-                        local tgtTheme = cData.Theme .. "Btn"
-                        local pT = SetScroll:FindFirstChild(tgtTheme, true)
-                        if pT then 
-                            local cx = pT.Name
-                        end 
-                    end
                     SolaraManager.SpeedOverride = cData.Speed
                     SolaraManager.JumpOverride = cData.Jump
                     if cData.FarmSpeed then SolaraManager.FarmSpeed = cData.FarmSpeed end
@@ -1853,6 +2115,10 @@ do
                                 ref.NameInput.Text = dt.Name
                             end
                         end
+                    end
+                    
+                    if cData.Theme then 
+                        SolaraManager.ApplyTheme(cData.Theme)
                     end
                     
                     LoadCfgBtn.Text = "Loaded!"
@@ -1898,80 +2164,7 @@ do
                 local btn = CreateButton(TGrid, tName .. "Btn", tName, bSize, bPos, bBg, "Panels")
                 
                 btn.MouseButton1Click:Connect(function()
-                    local sT = Themes[tName]
-                    SolaraManager.CurrentTheme = sT
-                    SolaraManager.CurrentThemeName = tName
-                    
-                    local bgA = SolaraManager.ThemeObjects.Backgrounds
-                    for _, bObj in ipairs(bgA) do 
-                        if bObj.Parent then 
-                            local p = {}
-                            p.BackgroundColor3 = sT.MainBg
-                            ApplyTween(bObj, p, 0.5) 
-                        end 
-                    end
-                    
-                    local pnlA = SolaraManager.ThemeObjects.Panels
-                    for _, pObj in ipairs(pnlA) do 
-                        if pObj.Parent then 
-                            local p = {}
-                            p.BackgroundColor3 = sT.PanelBg
-                            ApplyTween(pObj, p, 0.5) 
-                        end 
-                    end
-                    
-                    local accA = SolaraManager.ThemeObjects.Accents
-                    for _, aObj in ipairs(accA) do 
-                        if aObj.Parent then 
-                            local p = {}
-                            p.BackgroundColor3 = sT.Accent
-                            ApplyTween(aObj, p, 0.5) 
-                        end 
-                    end
-                    
-                    local strA = SolaraManager.ThemeObjects.Strokes
-                    for _, sObj in ipairs(strA) do 
-                        if sObj.Parent then 
-                            local p = {}
-                            p.Color = sT.Stroke
-                            ApplyTween(sObj, p, 0.5) 
-                        end 
-                    end
-                    
-                    local divA = SolaraManager.ThemeObjects.Dividers
-                    for _, dObj in ipairs(divA) do 
-                        if dObj.Parent then 
-                            local p = {}
-                            p.BackgroundColor3 = sT.Stroke
-                            ApplyTween(dObj, p, 0.5) 
-                        end 
-                    end
-                    
-                    local txtA = SolaraManager.ThemeObjects.Texts
-                    for _, tObj in ipairs(txtA) do 
-                        if tObj.Parent then 
-                            local p = {}
-                            p.TextColor3 = sT.Text
-                            ApplyTween(tObj, p, 0.5) 
-                        end 
-                    end
-                    
-                    local tbTbl = SolaraManager.UI.TabButtons
-                    for lTN, tBtn in pairs(tbTbl) do 
-                        local isA = (lTN == SolaraManager.ActiveTab)
-                        local tC
-                        if isA then tC = sT.Accent else tC = sT.PanelBg end
-                        local p = {}
-                        p.BackgroundColor3 = tC
-                        ApplyTween(tBtn, p, 0.5) 
-                    end
-                    
-                    local mS = SolaraManager.UI.MainFrameStroke
-                    if mS then 
-                        local p = {}
-                        p.Color = sT.Accent
-                        ApplyTween(mS, p, 0.5) 
-                    end
+                    SolaraManager.ApplyTheme(tName)
                 end)
             end
         end
@@ -1990,30 +2183,28 @@ do
     BuildThemeGroup("🕹️ VIDEO GAMES THEMES", "Game", ggS)
 end
 
+SwitchTab("Player")
+SolaraManager.UpdateTogglesVisuals()
+
 -------------------------------------------------------------------------------
--- 13. ÉCOUTEURS D'ÉVÉNEMENTS (MUTE AUDIO GLOBAL)
+-- 13. ÉCOUTEURS D'ÉVÉNEMENTS (ESP & NOCLIP)
 -------------------------------------------------------------------------------
-local function TryMuteSound(obj)
-    local isS = obj:IsA("Sound")
-    if isS then
-        local cMute = SolaraManager.MuteGameAudio
-        if cMute then
-            obj.Volume = 0
+RunService.Stepped:Connect(function()
+    local isNC = SolaraManager.IsNoclip
+    if isNC then
+        local c = LocalPlayer.Character
+        if c then
+            local ds = c:GetDescendants()
+            for _, p in ipairs(ds) do
+                local iBP = p:IsA("BasePart")
+                if iBP then
+                    local iC = p.CanCollide
+                    if iC then p.CanCollide = false end
+                end
+            end
         end
     end
-end
-
-workspace.DescendantAdded:Connect(TryMuteSound)
-SoundService.DescendantAdded:Connect(TryMuteSound)
-
-CoreGui.DescendantAdded:Connect(function(obj)
-    local isC = (obj ~= SolaraManager.CustomMusicInstance)
-    if isC then 
-        TryMuteSound(obj) 
-    end
 end)
-
-SwitchTab("Player")
 
 -------------------------------------------------------------------------------
 -- 14. BOUCLE PRINCIPALE
@@ -2034,9 +2225,7 @@ task.spawn(function()
         
         if hum then
             local spO = SolaraManager.SpeedOverride
-            if spO then 
-                hum.WalkSpeed = spO 
-            end
+            if spO then hum.WalkSpeed = spO end
             
             local jpO = SolaraManager.JumpOverride
             if jpO then 
@@ -2049,12 +2238,8 @@ task.spawn(function()
         if isC then 
             pcall(function() 
                 local t = nil
-                if char then
-                    t = char:FindFirstChildOfClass("Tool")
-                end
-                if t then 
-                    t:Activate() 
-                end 
+                if char then t = char:FindFirstChildOfClass("Tool") end
+                if t then t:Activate() end 
             end) 
         end
         
@@ -2075,44 +2260,77 @@ task.spawn(function()
                 local lS = math.floor(l % 60)
                 
                 local sStr = string.format("Now Playing: %s | %02d:%02d / %02d:%02d", mN, pM, pS, lM, lS)
-                if mStatLbl then
-                    mStatLbl.Text = sStr
-                end
+                if mStatLbl then mStatLbl.Text = sStr end
             end
         else
             if mStatLbl then
                 local cTxt = mStatLbl.Text
                 local dTxt = "Status: No music playing"
                 local isDiff = (cTxt ~= dTxt)
-                if isDiff then
-                    mStatLbl.Text = dTxt
-                end
+                if isDiff then mStatLbl.Text = dTxt end
             end
         end
         
-        local cT = tick()
-        local lMC = SolaraManager.LastMuteCheck
-        local tD = cT - lMC
-        local isO1 = (tD > 1)
-        
-        if isO1 then
-            SolaraManager.LastMuteCheck = cT
-            local isM = SolaraManager.MuteGameAudio
-            
-            if isM then
-                local wD = workspace:GetDescendants()
-                for _, sO in ipairs(wD) do 
+        local isM = SolaraManager.MuteGameAudio
+        if isM then
+            pcall(function()
+                local wsD = workspace:GetDescendants()
+                for _, sO in ipairs(wsD) do
                     local isS = sO:IsA("Sound")
-                    if isS then sO.Volume = 0 end 
+                    if isS then
+                        local cV = sO.Volume
+                        local isG = (cV > 0)
+                        if isG then sO.Volume = 0 end
+                    end
                 end
                 
-                local sD = SoundService:GetDescendants()
-                for _, sO in ipairs(sD) do 
+                local ssD = SoundService:GetDescendants()
+                for _, sO in ipairs(ssD) do
                     local isS = sO:IsA("Sound")
-                    if isS then sO.Volume = 0 end 
+                    if isS then
+                        local cV = sO.Volume
+                        local isG = (cV > 0)
+                        if isG then sO.Volume = 0 end
+                    end
                 end
-            end
+            end)
         end
+        
+        pcall(function()
+            local eF = CoreGui:FindFirstChild("LeyleyESP")
+            if not eF then
+                eF = Instance.new("Folder")
+                eF.Name = "LeyleyESP"
+                eF.Parent = CoreGui
+            end
+            
+            local isE = SolaraManager.IsESP
+            if isE then
+                local pL = Players:GetPlayers()
+                for _, pO in ipairs(pL) do
+                    local isMe = (pO == LocalPlayer)
+                    if not isMe then
+                        local pC = pO.Character
+                        if pC then
+                            local hN = pO.Name .. "_ESP"
+                            local hO = eF:FindFirstChild(hN)
+                            if not hO then
+                                hO = Instance.new("Highlight")
+                                hO.Name = hN
+                                local cC = Color3.new(1, 0, 0)
+                                hO.FillColor = cC
+                                local oC = Color3.new(1, 1, 1)
+                                hO.OutlineColor = oC
+                                hO.Parent = eF
+                            end
+                            hO.Adornee = pC
+                        end
+                    end
+                end
+            else
+                eF:ClearAllChildren()
+            end
+        end)
         
         pcall(function()
             local pG = LocalPlayer.PlayerGui
@@ -2144,9 +2362,7 @@ task.spawn(function()
                                     end
                                     
                                     local cStLbl = SolaraManager.UI.CashStatusLbl
-                                    if cStLbl then
-                                        cStLbl.Text = fStr
-                                    end
+                                    if cStLbl then cStLbl.Text = fStr end
                                     
                                     local lCV = SolaraManager.LastCashValue
                                     local isDiff = (pNum ~= lCV)
@@ -2202,14 +2418,10 @@ task.spawn(function()
                                             
                                             local fnStr = string.format("Est: $%s/sec | $%s/hr", fCps, fCph)
                                             
-                                            if cRLbl then
-                                                cRLbl.Text = fnStr
-                                            end
+                                            if cRLbl then cRLbl.Text = fnStr end
                                         end
                                     else
-                                        if cRLbl then
-                                            cRLbl.Text = "Est: $0/sec | $0/hr"
-                                        end
+                                        if cRLbl then cRLbl.Text = "Est: $0/sec | $0/hr" end
                                     end
                                 end
                             end
@@ -2541,9 +2753,7 @@ task.spawn(function()
                                 
                                 local tD = tFD.Detector
                                 local fc = fireclickdetector
-                                if fc then 
-                                    fc(tD) 
-                                end
+                                if fc then fc(tD) end
                                 
                                 local cam = workspace.CurrentCamera
                                 local scT = Enum.CameraType.Scriptable
