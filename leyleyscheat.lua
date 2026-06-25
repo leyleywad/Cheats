@@ -24,265 +24,78 @@ local LocalPlayer = Players.LocalPlayer
 -------------------------------------------------------------------------------
 local Themes = {
     -- Catégorie : Color Themes
-    Default = { 
-        MainBg = Color3.fromRGB(20, 20, 25), 
-        PanelBg = Color3.fromRGB(30, 30, 38), 
-        Text = Color3.fromRGB(240, 240, 240), 
-        Accent = Color3.fromRGB(90, 130, 255), 
-        Success = Color3.fromRGB(60, 180, 90), 
-        Danger = Color3.fromRGB(220, 70, 70), 
-        Warning = Color3.fromRGB(220, 160, 50), 
-        Stroke = Color3.fromRGB(60, 60, 75), 
-        Group = "Color" 
-    },
-    Cyberpunk = { 
-        MainBg = Color3.fromRGB(15, 10, 25), 
-        PanelBg = Color3.fromRGB(25, 15, 40), 
-        Text = Color3.fromRGB(255, 255, 0), 
-        Accent = Color3.fromRGB(255, 0, 255), 
-        Success = Color3.fromRGB(0, 255, 255), 
-        Danger = Color3.fromRGB(255, 50, 50), 
-        Warning = Color3.fromRGB(255, 150, 0), 
-        Stroke = Color3.fromRGB(100, 0, 150), 
-        Group = "Color" 
-    },
-    Ruby = { 
-        MainBg = Color3.fromRGB(25, 10, 10), 
-        PanelBg = Color3.fromRGB(40, 15, 15), 
-        Text = Color3.fromRGB(255, 200, 200), 
-        Accent = Color3.fromRGB(220, 50, 50), 
-        Success = Color3.fromRGB(50, 200, 100), 
-        Danger = Color3.fromRGB(180, 30, 30), 
-        Warning = Color3.fromRGB(200, 100, 30), 
-        Stroke = Color3.fromRGB(150, 40, 40), 
-        Group = "Color" 
-    },
-    Synthwave = { 
-        MainBg = Color3.fromRGB(30, 15, 45), 
-        PanelBg = Color3.fromRGB(45, 25, 70), 
-        Text = Color3.fromRGB(255, 150, 220), 
-        Accent = Color3.fromRGB(0, 255, 255), 
-        Success = Color3.fromRGB(50, 255, 150), 
-        Danger = Color3.fromRGB(255, 50, 100), 
-        Warning = Color3.fromRGB(255, 180, 0), 
-        Stroke = Color3.fromRGB(150, 0, 150), 
-        Group = "Color" 
-    },
-    Matrix = { 
-        MainBg = Color3.fromRGB(10, 15, 10), 
-        PanelBg = Color3.fromRGB(15, 25, 15), 
-        Text = Color3.fromRGB(100, 255, 100), 
-        Accent = Color3.fromRGB(50, 200, 50), 
-        Success = Color3.fromRGB(0, 255, 0), 
-        Danger = Color3.fromRGB(200, 50, 50), 
-        Warning = Color3.fromRGB(200, 200, 50), 
-        Stroke = Color3.fromRGB(30, 100, 30), 
-        Group = "Color" 
-    },
-    RoyalGold = { 
-        MainBg = Color3.fromRGB(25, 20, 10), 
-        PanelBg = Color3.fromRGB(40, 35, 15), 
-        Text = Color3.fromRGB(255, 230, 150), 
-        Accent = Color3.fromRGB(255, 200, 50), 
-        Success = Color3.fromRGB(100, 255, 100), 
-        Danger = Color3.fromRGB(255, 80, 80), 
-        Warning = Color3.fromRGB(255, 150, 50), 
-        Stroke = Color3.fromRGB(150, 120, 40), 
-        Group = "Color" 
-    },
-    Amethyst = { 
-        MainBg = Color3.fromRGB(20, 10, 30), 
-        PanelBg = Color3.fromRGB(35, 15, 50), 
-        Text = Color3.fromRGB(230, 200, 255), 
-        Accent = Color3.fromRGB(150, 80, 255), 
-        Success = Color3.fromRGB(80, 255, 180), 
-        Danger = Color3.fromRGB(255, 70, 120), 
-        Warning = Color3.fromRGB(255, 170, 50), 
-        Stroke = Color3.fromRGB(100, 40, 150), 
-        Group = "Color" 
-    },
+    Default = { MainBg = Color3.fromRGB(20, 20, 25), PanelBg = Color3.fromRGB(30, 30, 38), Text = Color3.fromRGB(240, 240, 240), Accent = Color3.fromRGB(90, 130, 255), Success = Color3.fromRGB(60, 180, 90), Danger = Color3.fromRGB(220, 70, 70), Warning = Color3.fromRGB(220, 160, 50), Stroke = Color3.fromRGB(60, 60, 75), Group = "Color" },
+    Cyberpunk = { MainBg = Color3.fromRGB(15, 10, 25), PanelBg = Color3.fromRGB(25, 15, 40), Text = Color3.fromRGB(255, 255, 0), Accent = Color3.fromRGB(255, 0, 255), Success = Color3.fromRGB(0, 255, 255), Danger = Color3.fromRGB(255, 50, 50), Warning = Color3.fromRGB(255, 150, 0), Stroke = Color3.fromRGB(100, 0, 150), Group = "Color" },
+    Ruby = { MainBg = Color3.fromRGB(25, 10, 10), PanelBg = Color3.fromRGB(40, 15, 15), Text = Color3.fromRGB(255, 200, 200), Accent = Color3.fromRGB(220, 50, 50), Success = Color3.fromRGB(50, 200, 100), Danger = Color3.fromRGB(180, 30, 30), Warning = Color3.fromRGB(200, 100, 30), Stroke = Color3.fromRGB(150, 40, 40), Group = "Color" },
+    Synthwave = { MainBg = Color3.fromRGB(30, 15, 45), PanelBg = Color3.fromRGB(45, 25, 70), Text = Color3.fromRGB(255, 150, 220), Accent = Color3.fromRGB(0, 255, 255), Success = Color3.fromRGB(50, 255, 150), Danger = Color3.fromRGB(255, 50, 100), Warning = Color3.fromRGB(255, 180, 0), Stroke = Color3.fromRGB(150, 0, 150), Group = "Color" },
+    Matrix = { MainBg = Color3.fromRGB(10, 15, 10), PanelBg = Color3.fromRGB(15, 25, 15), Text = Color3.fromRGB(100, 255, 100), Accent = Color3.fromRGB(50, 200, 50), Success = Color3.fromRGB(0, 255, 0), Danger = Color3.fromRGB(200, 50, 50), Warning = Color3.fromRGB(200, 200, 50), Stroke = Color3.fromRGB(30, 100, 30), Group = "Color" },
+    RoyalGold = { MainBg = Color3.fromRGB(25, 20, 10), PanelBg = Color3.fromRGB(40, 35, 15), Text = Color3.fromRGB(255, 240, 180), Accent = Color3.fromRGB(160, 110, 30), Success = Color3.fromRGB(100, 255, 100), Danger = Color3.fromRGB(255, 80, 80), Warning = Color3.fromRGB(255, 150, 50), Stroke = Color3.fromRGB(150, 120, 40), Group = "Color" },
+    Amethyst = { MainBg = Color3.fromRGB(20, 10, 30), PanelBg = Color3.fromRGB(35, 15, 50), Text = Color3.fromRGB(230, 200, 255), Accent = Color3.fromRGB(150, 80, 255), Success = Color3.fromRGB(80, 255, 180), Danger = Color3.fromRGB(255, 70, 120), Warning = Color3.fromRGB(255, 170, 50), Stroke = Color3.fromRGB(100, 40, 150), Group = "Color" },
     
     -- Catégorie : Video Games Themes
-    Mario = { 
-        MainBg = Color3.fromRGB(20, 120, 255), 
-        PanelBg = Color3.fromRGB(220, 40, 40), 
-        Text = Color3.fromRGB(255, 255, 255), 
-        Accent = Color3.fromRGB(255, 210, 0), 
-        Success = Color3.fromRGB(50, 200, 50), 
-        Danger = Color3.fromRGB(150, 0, 0), 
-        Warning = Color3.fromRGB(255, 150, 0), 
-        Stroke = Color3.fromRGB(0, 50, 150), 
-        Group = "Game" 
-    },
-    Fallout = { 
-        MainBg = Color3.fromRGB(15, 20, 15), 
-        PanelBg = Color3.fromRGB(25, 35, 25), 
-        Text = Color3.fromRGB(50, 255, 50), 
-        Accent = Color3.fromRGB(100, 255, 100), 
-        Success = Color3.fromRGB(0, 200, 0), 
-        Danger = Color3.fromRGB(200, 50, 50), 
-        Warning = Color3.fromRGB(200, 200, 50), 
-        Stroke = Color3.fromRGB(30, 150, 30), 
-        Group = "Game" 
-    },
-    CP2077 = { 
-        MainBg = Color3.fromRGB(250, 230, 50), 
-        PanelBg = Color3.fromRGB(20, 20, 20), 
-        Text = Color3.fromRGB(0, 255, 255), 
-        Accent = Color3.fromRGB(255, 0, 60), 
-        Success = Color3.fromRGB(0, 255, 150), 
-        Danger = Color3.fromRGB(200, 0, 0), 
-        Warning = Color3.fromRGB(255, 100, 0), 
-        Stroke = Color3.fromRGB(20, 20, 20), 
-        Group = "Game" 
-    }
+    Mario = { MainBg = Color3.fromRGB(20, 120, 255), PanelBg = Color3.fromRGB(220, 40, 40), Text = Color3.fromRGB(255, 255, 255), Accent = Color3.fromRGB(255, 210, 0), Success = Color3.fromRGB(50, 200, 50), Danger = Color3.fromRGB(150, 0, 0), Warning = Color3.fromRGB(255, 150, 0), Stroke = Color3.fromRGB(0, 50, 150), Group = "Game" },
+    Fallout = { MainBg = Color3.fromRGB(15, 20, 15), PanelBg = Color3.fromRGB(25, 35, 25), Text = Color3.fromRGB(100, 255, 100), Accent = Color3.fromRGB(30, 90, 30), Success = Color3.fromRGB(0, 200, 0), Danger = Color3.fromRGB(200, 50, 50), Warning = Color3.fromRGB(200, 200, 50), Stroke = Color3.fromRGB(30, 150, 30), Group = "Game" },
+    CP2077 = { MainBg = Color3.fromRGB(250, 230, 50), PanelBg = Color3.fromRGB(20, 20, 20), Text = Color3.fromRGB(0, 255, 255), Accent = Color3.fromRGB(255, 0, 60), Success = Color3.fromRGB(0, 255, 150), Danger = Color3.fromRGB(200, 0, 0), Warning = Color3.fromRGB(255, 100, 0), Stroke = Color3.fromRGB(20, 20, 20), Group = "Game" }
 }
 
--------------------------------------------------------------------------------
--- 3. GESTIONNAIRE D'ÉTATS (MANAGER)
--------------------------------------------------------------------------------
 local SolaraManager = {
-    GuiName = "LeyleysCheat_V6_3",
-    CurrentTheme = Themes.Default,
-    ActiveTab = "Player",
-    
-    ThemeObjects = { 
-        Backgrounds = {}, 
-        Panels = {}, 
-        Accents = {}, 
-        Strokes = {}, 
-        Texts = {}, 
-        Dividers = {} 
-    },
-    
-    -- Player
-    IsClicking = false, 
-    IsAntiAfk = false, 
-    SpeedOverride = nil, 
-    JumpOverride = nil, 
-    SelectedTarget = nil,
-    
-    -- Game
-    ActiveGameConfig = "SellLemons", 
-    ActiveBuyState = "Off", 
-    BuySpeed = 2, 
-    MyTycoon = nil, 
-    
-    -- Farm
-    ActiveFarmState = "Off", 
-    FarmSpeed = 2, 
-    FarmCache = {}, 
-    SpecialCount = 0, 
-    LastCacheUpdate = 0,
-    
-    -- Upgrades & Tycoon
-    HasSafetyRespawned = false, 
-    ActiveAutoUpgrade = false, 
-    LastUpgradeCheck = 0, 
-    ClickDelay = 0.1,
-    
-    -- Stats Cash
-    CashHistory = {},
-    
-    -- Musique
-    CustomMusicInstance = nil,
-    MuteGameAudio = false
+    GuiName = "LeyleysCheat_V6_3", CurrentTheme = Themes.Default, ActiveTab = "Player",
+    ThemeObjects = { Backgrounds = {}, Panels = {}, Accents = {}, Strokes = {}, Texts = {}, Dividers = {} },
+    IsClicking = false, IsAntiAfk = false, SpeedOverride = nil, JumpOverride = nil, SelectedTarget = nil,
+    ActiveGameConfig = "SellLemons", ActiveBuyState = "Off", BuySpeed = 2, MyTycoon = nil, 
+    ActiveFarmState = "Off", FarmSpeed = 2, FarmCache = {}, SpecialCount = 0, LastCacheUpdate = 0,
+    HasSafetyRespawned = false, ActiveAutoUpgrade = false, LastUpgradeCheck = 0, ClickDelay = 0.1,
+    CashHistory = {}, CustomMusicInstance = nil, CustomMusicName = "Unknown Audio", MuteGameAudio = false, LastMuteCheck = 0
 }
 
--------------------------------------------------------------------------------
--- 4. PARSER ET FORMATAGE DE PRIX
--------------------------------------------------------------------------------
 local SuffixDict = {}
-
 local function GenerateSuffixes()
-    local order = { 
-        "thousand", "million", "billion", "trillion", "quadrillion", 
-        "quintillion", "sextillion", "septillion", "octillion", "nonillion" 
-    }
-    
-    for i, name in ipairs(order) do 
-        SuffixDict[name] = i
-        SuffixDict[name.."s"] = i 
-    end
-    
-    local tensDict = { 
-        ["decillion"] = 11, ["vigintillion"] = 21, ["trigintillion"] = 31, 
-        ["quadragintillion"] = 41, ["quinquagintillion"] = 51, 
-        ["sexagintillion"] = 61, ["septuagintillion"] = 71, 
-        ["octogintillion"] = 81, ["nonagintillion"] = 91 
-    }
-    
-    local unitsPrefix = { 
-        ["un"] = 1, ["duo"] = 2, ["tre"] = 3, ["tres"] = 3, 
-        ["quattuor"] = 4, ["quattuo"] = 4, ["quin"] = 5, ["quinqua"] = 5, 
-        ["sex"] = 6, ["ses"] = 6, ["septen"] = 7, ["septem"] = 7, 
-        ["sept"] = 7, ["octo"] = 8, ["novem"] = 9, ["noven"] = 9 
-    }
-    
+    local order = { "thousand", "million", "billion", "trillion", "quadrillion", "quintillion", "sextillion", "septillion", "octillion", "nonillion" }
+    for i, name in ipairs(order) do SuffixDict[name] = i; SuffixDict[name.."s"] = i end
+    local tensDict = { ["decillion"] = 11, ["vigintillion"] = 21, ["trigintillion"] = 31, ["quadragintillion"] = 41, ["quinquagintillion"] = 51, ["sexagintillion"] = 61, ["septuagintillion"] = 71, ["octogintillion"] = 81, ["nonagintillion"] = 91 }
+    local unitsPrefix = { ["un"] = 1, ["duo"] = 2, ["tre"] = 3, ["tres"] = 3, ["quattuor"] = 4, ["quattuo"] = 4, ["quin"] = 5, ["quinqua"] = 5, ["sex"] = 6, ["ses"] = 6, ["septen"] = 7, ["septem"] = 7, ["sept"] = 7, ["octo"] = 8, ["novem"] = 9, ["noven"] = 9 }
     for tName, tVal in pairs(tensDict) do
-        SuffixDict[tName] = tVal
-        SuffixDict[tName.."s"] = tVal
-        for uName, uVal in pairs(unitsPrefix) do 
-            SuffixDict[uName..tName] = tVal + uVal
-            SuffixDict[uName..tName.."s"] = tVal + uVal 
-        end
+        SuffixDict[tName] = tVal; SuffixDict[tName.."s"] = tVal
+        for uName, uVal in pairs(unitsPrefix) do SuffixDict[uName..tName] = tVal + uVal; SuffixDict[uName..tName.."s"] = tVal + uVal end
     end
-    
-    SuffixDict["centillion"] = 101
-    SuffixDict["centillions"] = 101
-    SuffixDict["k"] = 1
-    SuffixDict["m"] = 2
-    SuffixDict["b"] = 3
-    SuffixDict["t"] = 4
+    SuffixDict["centillion"] = 101; SuffixDict["centillions"] = 101; SuffixDict["k"] = 1; SuffixDict["m"] = 2; SuffixDict["b"] = 3; SuffixDict["t"] = 4
 end
-
 GenerateSuffixes()
 
 local function ParsePrice(str)
     if not str then return math.huge end
     str = string.lower(tostring(str))
-    
-    if string.match(str, "free") or string.match(str, "gratuit") then 
-        return 0 
-    end
-    
-    local sciNum = tonumber(str)
-    if sciNum then return sciNum end
-    
+    if string.match(str, "free") or string.match(str, "gratuit") then return 0 end
+    local sciNum = tonumber(str); if sciNum then return sciNum end
     str = string.gsub(str, "[^%d%.%a]", "") 
     local numStr, suffix = string.match(str, "^([%d%.]+)(%a*)$")
-    
     if not numStr then return math.huge end
-    
-    local num = tonumber(numStr)
-    if not num then return math.huge end
-    
+    local num = tonumber(numStr); if not num then return math.huge end
     if suffix and suffix ~= "" then
         local powerIndex = SuffixDict[suffix]
-        if powerIndex then 
-            num = num * (10 ^ (powerIndex * 3)) 
-        else 
-            return math.huge 
-        end
+        if powerIndex then num = num * (10 ^ (powerIndex * 3)) else return math.huge end
     end
-    
     return num
 end
 
 local function FormatNumber(num)
-    if num < 1000 then 
-        return tostring(math.floor(num)) 
-    end
+    if type(num) ~= "number" or num ~= num or num == math.huge then return "0" end
+    if num < 1000 then return tostring(math.floor(num)) end
     
-    local suffixes = {"K", "M", "B", "T", "Qd", "Qn", "Sx", "Sp", "Oc", "N"}
+    local suffixes = {"K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc", "Ud", "Dd", "Td", "Qad", "Qid", "Sxd"}
     local suffixIndex = 0
+    local tempNum = num
     
-    while num >= 1000 and suffixIndex < #suffixes do
-        num = num / 1000
+    while tempNum >= 1000 and suffixIndex < #suffixes do
+        tempNum = tempNum / 1000
         suffixIndex = suffixIndex + 1
     end
     
-    return string.format("%.1f%s", num, suffixes[suffixIndex])
+    if suffixIndex <= #suffixes then
+        return string.format("%.2f%s", tempNum, suffixes[suffixIndex])
+    else
+        return string.format("%.2e", num) -- Format scientifique si on dépasse les limites
+    end
 end
 
 -------------------------------------------------------------------------------
@@ -1069,58 +882,71 @@ SettingsLayout.Padding = UDim.new(0, 5)
 CreateLabel(SettingsPage, "MusicTitle", "🎵 CUSTOM MUSIC PLAYER", UDim2.new(1, 0, 0, 20), UDim2.new(), Enum.TextXAlignment.Left).LayoutOrder = 1
 
 local MusicRow1 = CreateFrame(SettingsPage, "MusicRow1", UDim2.new(1, 0, 0, 30), UDim2.new(), nil, "Backgrounds")
-MusicRow1.BackgroundTransparency = 1
-MusicRow1.LayoutOrder = 2
-
+MusicRow1.BackgroundTransparency = 1; MusicRow1.LayoutOrder = 2
 local MuteBtn = CreateButton(MusicRow1, "MuteBtn", "Mute Game Audio: OFF", UDim2.new(1, -6, 1, 0), UDim2.new(), SolaraManager.CurrentTheme.Danger)
 
 local MusicRow2 = CreateFrame(SettingsPage, "MusicRow2", UDim2.new(1, 0, 0, 30), UDim2.new(), nil, "Backgrounds")
-MusicRow2.BackgroundTransparency = 1
-MusicRow2.LayoutOrder = 3
-
+MusicRow2.BackgroundTransparency = 1; MusicRow2.LayoutOrder = 3
 local MusicInput = CreateInput(MusicRow2, "MusicInput", "Audio ID (e.g. 1837879082)", UDim2.new(0.65, -5, 1, 0), UDim2.new())
-local PlayMusicBtn = CreateButton(MusicRow2, "PlayMusicBtn", "Play", UDim2.new(0.35, -5, 1, 0), UDim2.new(0.65, 5, 0, 0), SolaraManager.CurrentTheme.Accent)
+local PlayMusicBtn = CreateButton(MusicRow2, "PlayMusicBtn", "Load & Play", UDim2.new(0.35, -5, 1, 0), UDim2.new(0.65, 5, 0, 0), SolaraManager.CurrentTheme.Accent)
+
+local MusicRow3 = CreateFrame(SettingsPage, "MusicRow3", UDim2.new(1, 0, 0, 30), UDim2.new(), nil, "Backgrounds")
+MusicRow3.BackgroundTransparency = 1; MusicRow3.LayoutOrder = 4
+local PauseMusicBtn = CreateButton(MusicRow3, "PauseMusicBtn", "Pause", UDim2.new(0.48, 0, 1, 0), UDim2.new(0, 0, 0, 0), SolaraManager.CurrentTheme.Warning)
+local StopMusicBtn = CreateButton(MusicRow3, "StopMusicBtn", "Stop", UDim2.new(0.48, -6, 1, 0), UDim2.new(0.52, 0, 0, 0), SolaraManager.CurrentTheme.Danger)
+
+local MusicStatusLbl = CreateLabel(SettingsPage, "MusicStatusLbl", "Status: No music playing", UDim2.new(1, 0, 0, 20), UDim2.new(), Enum.TextXAlignment.Left)
+MusicStatusLbl.LayoutOrder = 5; MusicStatusLbl.TextSize = 12; MusicStatusLbl.TextColor3 = Color3.fromRGB(150, 150, 150)
+
+local sDiv = CreateFrame(SettingsPage, "sDiv", UDim2.new(1, -10, 0, 2), UDim2.new(), SolaraManager.CurrentTheme.Stroke, "Dividers")
+sDiv.LayoutOrder = 6
 
 MuteBtn.MouseButton1Click:Connect(function()
     SolaraManager.MuteGameAudio = not SolaraManager.MuteGameAudio
     MuteBtn.Text = SolaraManager.MuteGameAudio and "Mute Game Audio: ON" or "Mute Game Audio: OFF"
     ApplyTween(MuteBtn, {BackgroundColor3 = SolaraManager.MuteGameAudio and SolaraManager.CurrentTheme.Success or SolaraManager.CurrentTheme.Danger})
     
-    for _, sound in ipairs(workspace:GetDescendants()) do
-        if sound:IsA("Sound") and sound ~= SolaraManager.CustomMusicInstance then
-            sound.Volume = SolaraManager.MuteGameAudio and 0 or 0.5
-        end
+    if not SolaraManager.MuteGameAudio then
+        for _, s in ipairs(workspace:GetDescendants()) do if s:IsA("Sound") then s.Volume = 0.5 end end
+        for _, s in ipairs(game:GetService("SoundService"):GetDescendants()) do if s:IsA("Sound") then s.Volume = 0.5 end end
     end
 end)
 
 PlayMusicBtn.MouseButton1Click:Connect(function()
     local id = tonumber(MusicInput.Text)
-    if not id then
-        if SolaraManager.CustomMusicInstance then 
-            SolaraManager.CustomMusicInstance:Destroy()
-            SolaraManager.CustomMusicInstance = nil 
-        end
-        PlayMusicBtn.Text = "Stopped"
-        return
-    end
+    if not id then return end
     
-    if SolaraManager.CustomMusicInstance then 
-        SolaraManager.CustomMusicInstance:Destroy() 
-    end
+    if SolaraManager.CustomMusicInstance then SolaraManager.CustomMusicInstance:Destroy() end
+    SolaraManager.CustomMusicName = "Loading..."
     
     local newSound = Instance.new("Sound")
     newSound.SoundId = "rbxassetid://" .. id
-    newSound.Looped = true
-    newSound.Volume = 1
-    newSound.Parent = CoreGui
-    newSound:Play()
-    
+    newSound.Looped = true; newSound.Volume = 1; newSound.Parent = CoreGui
     SolaraManager.CustomMusicInstance = newSound
-    PlayMusicBtn.Text = "Playing"
+    newSound:Play()
+    PauseMusicBtn.Text = "Pause"
+    
+    task.spawn(function()
+        local s, info = pcall(function() return game:GetService("MarketplaceService"):GetProductInfo(id) end)
+        if s and info then SolaraManager.CustomMusicName = info.Name else SolaraManager.CustomMusicName = "Audio ID: " .. id end
+    end)
 end)
 
-local sDiv = CreateFrame(SettingsPage, "sDiv", UDim2.new(1, -10, 0, 2), UDim2.new(), SolaraManager.CurrentTheme.Stroke, "Dividers")
-sDiv.LayoutOrder = 4
+PauseMusicBtn.MouseButton1Click:Connect(function()
+    if SolaraManager.CustomMusicInstance then
+        if SolaraManager.CustomMusicInstance.IsPlaying then
+            SolaraManager.CustomMusicInstance:Pause(); PauseMusicBtn.Text = "Resume"
+        else
+            SolaraManager.CustomMusicInstance:Resume(); PauseMusicBtn.Text = "Pause"
+        end
+    end
+end)
+
+StopMusicBtn.MouseButton1Click:Connect(function()
+    if SolaraManager.CustomMusicInstance then
+        SolaraManager.CustomMusicInstance:Stop(); SolaraManager.CustomMusicInstance.TimePosition = 0; PauseMusicBtn.Text = "Pause"
+    end
+end)
 
 -- B. Fonction de génération des groupes de thèmes statiques
 local function BuildThemeGroup(title, groupName, startOrder)
@@ -1199,31 +1025,35 @@ task.spawn(function()
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
         local hum = char and char:FindFirstChild("Humanoid")
         
-        -- Modification des statistiques (Vitesse / Saut)
+        -- Modification des statistiques
         if hum then
-            if SolaraManager.SpeedOverride then 
-                hum.WalkSpeed = SolaraManager.SpeedOverride 
-            end
-            if SolaraManager.JumpOverride then 
-                hum.UseJumpPower = true
-                hum.JumpPower = SolaraManager.JumpOverride 
-            end
+            if SolaraManager.SpeedOverride then hum.WalkSpeed = SolaraManager.SpeedOverride end
+            if SolaraManager.JumpOverride then hum.UseJumpPower = true; hum.JumpPower = SolaraManager.JumpOverride end
         end
         
         -- Auto Clicker
         if SolaraManager.IsClicking then 
-            pcall(function() 
-                local tool = char and char:FindFirstChildOfClass("Tool")
-                if tool then tool:Activate() end 
-            end) 
+            pcall(function() local tool = char and char:FindFirstChildOfClass("Tool"); if tool then tool:Activate() end end) 
         end
         
-        -- Musique silencieuse en boucle continue
-        if SolaraManager.MuteGameAudio then
-            for _, sound in ipairs(workspace:GetDescendants()) do
-                if sound:IsA("Sound") and sound ~= SolaraManager.CustomMusicInstance then 
-                    sound.Volume = 0 
-                end
+        -- Mise à jour visuelle du lecteur de musique
+        if SolaraManager.CustomMusicInstance and SolaraManager.CustomMusicInstance.IsLoaded then
+            local pos = SolaraManager.CustomMusicInstance.TimePosition
+            local len = SolaraManager.CustomMusicInstance.TimeLength
+            MusicStatusLbl.Text = string.format("Now Playing: %s | %02d:%02d / %02d:%02d", 
+                SolaraManager.CustomMusicName, math.floor(pos/60), math.floor(pos%60), math.floor(len/60), math.floor(len%60))
+        else
+            if MusicStatusLbl.Text ~= "Status: No music playing" and not SolaraManager.CustomMusicInstance then
+                MusicStatusLbl.Text = "Status: No music playing"
+            end
+        end
+        
+        -- Gestion du Mute Audio (Exécuté toutes les secondes pour ne pas lagger)
+        if tick() - SolaraManager.LastMuteCheck > 1 then
+            SolaraManager.LastMuteCheck = tick()
+            if SolaraManager.MuteGameAudio then
+                for _, s in ipairs(workspace:GetDescendants()) do if s:IsA("Sound") then s.Volume = 0 end end
+                for _, s in ipairs(game:GetService("SoundService"):GetDescendants()) do if s:IsA("Sound") then s.Volume = 0 end end
             end
         end
         
@@ -1239,12 +1069,11 @@ task.spawn(function()
                 if parsed ~= math.huge then 
                     currentCashNum = parsed 
                     
-                    -- Logique d'estimation du Cash
                     local now = tick()
                     table.insert(SolaraManager.CashHistory, {time = now, cash = parsed})
                     
-                    -- Nettoyage (On garde les 5 dernières secondes pour faire une moyenne)
-                    while #SolaraManager.CashHistory > 0 and (now - SolaraManager.CashHistory[1].time) > 5 do
+                    -- On garde un historique de 15 secondes max
+                    while #SolaraManager.CashHistory > 0 and (now - SolaraManager.CashHistory[1].time) > 15 do
                         table.remove(SolaraManager.CashHistory, 1)
                     end
                     
@@ -1264,63 +1093,47 @@ task.spawn(function()
             end
         end)
         
-        -- LOGIQUE AUTO UPGRADE (Correction du Scroll)
+        -- LOGIQUE AUTO UPGRADE (Correction parfaite du Scroll)
         if SolaraManager.ActiveAutoUpgrade then
             local menuVis = false
-            pcall(function() 
-                local menu = LocalPlayer.PlayerGui:FindFirstChild("Manage")
-                if menu and menu:FindFirstChild("ManageMenu") then 
-                    menuVis = menu.ManageMenu.Visible 
-                end 
-            end)
+            pcall(function() local menu = LocalPlayer.PlayerGui:FindFirstChild("Manage"); if menu and menu:FindFirstChild("ManageMenu") then menuVis = menu.ManageMenu.Visible end end)
 
             if not menuVis then
-                SolaraManager.ActiveAutoUpgrade = false
-                UpdateGameUI()
+                SolaraManager.ActiveAutoUpgrade = false; UpdateGameUI()
             else
                 if tick() - SolaraManager.LastUpgradeCheck >= 1.5 then 
                     SolaraManager.LastUpgradeCheck = tick()
                     pcall(function()
-                        local manageMenu = LocalPlayer.PlayerGui:FindFirstChild("Manage")
-                        if manageMenu then
-                            local manageFrame = manageMenu.ManageMenu.Body.Frame.Manage
-                            for _, child in ipairs(manageFrame:GetChildren()) do
-                                if string.match(child.Name, "^Lemon") then
-                                    local upBtn = child:FindFirstChild("Upgrade", true)
+                        local manageFrame = LocalPlayer.PlayerGui.Manage.ManageMenu.Body.Frame.Manage
+                        for _, child in ipairs(manageFrame:GetChildren()) do
+                            if string.match(child.Name, "^Lemon") then
+                                local upBtn = child:FindFirstChild("Upgrade", true)
+                                if upBtn and upBtn:IsA("GuiButton") then
+                                    local priceNum = math.huge
+                                    local priceObj = upBtn:FindFirstChild("Price")
+                                    if priceObj then 
+                                        local p = ParsePrice((priceObj:IsA("ValueBase")) and tostring(priceObj.Value) or priceObj.Text)
+                                        if p ~= math.huge then priceNum = p end 
+                                    end
                                     
-                                    if upBtn and upBtn:IsA("GuiButton") then
-                                        local priceNum = math.huge
-                                        local priceObj = upBtn:FindFirstChild("Price")
-                                        
-                                        if priceObj then 
-                                            local p = ParsePrice((priceObj:IsA("ValueBase")) and tostring(priceObj.Value) or priceObj.Text)
-                                            if p ~= math.huge then priceNum = p end 
+                                    if currentCashNum > 0 and currentCashNum >= priceNum then
+                                        -- FIX DU SCROLL : On cible la case principale du dépôt (child)
+                                        if manageFrame:IsA("ScrollingFrame") then
+                                            local targetY = child.AbsolutePosition.Y - manageFrame.AbsolutePosition.Y + manageFrame.CanvasPosition.Y
+                                            targetY = targetY - (manageFrame.AbsoluteSize.Y / 2) + (child.AbsoluteSize.Y / 2)
+                                            manageFrame.CanvasPosition = Vector2.new(0, math.max(0, targetY))
                                         end
+                                        task.wait(0.1)
                                         
-                                        if currentCashNum > 0 and currentCashNum >= priceNum then
-                                            -- FIX DU SCROLL : On cible le bouton Upgrade lui même pour une précision parfaite
-                                            if manageFrame:IsA("ScrollingFrame") then
-                                                local targetY = upBtn.AbsolutePosition.Y - manageFrame.AbsolutePosition.Y + manageFrame.CanvasPosition.Y
-                                                targetY = targetY - (manageFrame.AbsoluteSize.Y / 2) + (upBtn.AbsoluteSize.Y / 2)
-                                                manageFrame.CanvasPosition = Vector2.new(0, math.max(0, targetY))
-                                            end
-                                            
-                                            task.wait(0.1)
-                                            
-                                            local absPos = upBtn.AbsolutePosition
-                                            local absSize = upBtn.AbsoluteSize
-                                            
-                                            if absPos.X > 0 and absPos.Y > 0 then
-                                                local x = absPos.X + (absSize.X / 2)
-                                                local y = absPos.Y + (absSize.Y / 2) + 36
-                                                
-                                                VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 1)
-                                                task.wait(0.05)
-                                                VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 1)
-                                            end
-                                            
-                                            task.wait(0.2)
+                                        local absPos = upBtn.AbsolutePosition
+                                        local absSize = upBtn.AbsoluteSize
+                                        if absPos.X > 0 and absPos.Y > 0 then
+                                            local x = absPos.X + (absSize.X / 2)
+                                            local y = absPos.Y + (absSize.Y / 2) + 36
+                                            VirtualInputManager:SendMouseButtonEvent(x, y, 0, true, game, 1); task.wait(0.05)
+                                            VirtualInputManager:SendMouseButtonEvent(x, y, 0, false, game, 1)
                                         end
+                                        task.wait(0.2)
                                     end
                                 end
                             end
@@ -1334,25 +1147,14 @@ task.spawn(function()
         local otherPlayersPresent = #Players:GetPlayers() > 1
         local safeModePaused = false
         
-        if otherPlayersPresent then
-            if SolaraManager.ActiveFarmState == "Safe" or SolaraManager.ActiveBuyState == "Safe" then
-                safeModePaused = true
-                if not SolaraManager.HasSafetyRespawned then
-                    if char and hrp then 
-                        char:PivotTo(CFrame.new(0, 103, 0))
-                        hrp.Velocity = Vector3.zero
-                        hrp.RotVelocity = Vector3.zero 
-                    end
-                    SolaraManager.HasSafetyRespawned = true
-                end
-                
-                if SolaraManager.ActiveFarmState == "Safe" then 
-                    FarmStatusLbl.Text = "Status: PAUSED (Player in server)" 
-                end
-                if SolaraManager.ActiveBuyState == "Safe" then 
-                    TycoonStatusLbl.Text = "Status: PAUSED (Player in server)" 
-                end
+        if otherPlayersPresent and (SolaraManager.ActiveFarmState == "Safe" or SolaraManager.ActiveBuyState == "Safe") then
+            safeModePaused = true
+            if not SolaraManager.HasSafetyRespawned then
+                if char and hrp then char:PivotTo(CFrame.new(0, 103, 0)); hrp.Velocity = Vector3.zero; hrp.RotVelocity = Vector3.zero end
+                SolaraManager.HasSafetyRespawned = true
             end
+            if SolaraManager.ActiveFarmState == "Safe" then FarmStatusLbl.Text = "Status: PAUSED (Player in server)" end
+            if SolaraManager.ActiveBuyState == "Safe" then TycoonStatusLbl.Text = "Status: PAUSED (Player in server)" end
         else 
             SolaraManager.HasSafetyRespawned = false 
         end
@@ -1367,10 +1169,7 @@ task.spawn(function()
                             local oVal = f:FindFirstChild("Owner")
                             if oVal then
                                 local cOwn = (oVal:IsA("ObjectValue") and oVal.Value) and oVal.Value.Name or (oVal:IsA("StringValue") and oVal.Value or "")
-                                if string.lower(cOwn) == string.lower(LocalPlayer.Name) then 
-                                    SolaraManager.MyTycoon = f
-                                    break 
-                                end
+                                if string.lower(cOwn) == string.lower(LocalPlayer.Name) then SolaraManager.MyTycoon = f; break end
                             end
                         end
                     end
@@ -1391,14 +1190,9 @@ task.spawn(function()
                                     if pO then
                                         local rP = (pO:IsA("ValueBase")) and tostring(pO.Value) or pO.Text
                                         local mO = gF:FindFirstChild("PriceMag")
-                                        if mO then 
-                                            rP = rP .. ((mO:IsA("ValueBase")) and tostring(mO.Value) or mO.Text) 
-                                        end
-                                        
+                                        if mO then rP = rP .. ((mO:IsA("ValueBase")) and tostring(mO.Value) or mO.Text) end
                                         local nP = ParsePrice(rP)
-                                        if nP >= 0 and nP ~= math.huge then 
-                                            table.insert(btns, {Part=bP, Price=nP, Raw=rP}) 
-                                        end
+                                        if nP >= 0 and nP ~= math.huge then table.insert(btns, {Part=bP, Price=nP, Raw=rP}) end
                                     end
                                 end
                             end
@@ -1407,35 +1201,17 @@ task.spawn(function()
                         if pFolder then
                             for _, sF in ipairs(pFolder:GetChildren()) do
                                 local bF = sF:FindFirstChild("Buttons")
-                                if bF then 
-                                    for _, c in ipairs(bF:GetChildren()) do 
-                                        if tCats[c.Name] then 
-                                            for _, bM in ipairs(c:GetChildren()) do ScanModelForButton(bM) end 
-                                        elseif c:IsA("Model") then 
-                                            ScanModelForButton(c) 
-                                        end 
-                                    end 
-                                end
-                                if sF.Name == "Hills" then 
-                                    for _, d in ipairs(sF:GetDescendants()) do 
-                                        if d:IsA("Model") and d:FindFirstChild("Button") then ScanModelForButton(d) end 
-                                    end 
-                                end
+                                if bF then for _, c in ipairs(bF:GetChildren()) do if tCats[c.Name] then for _, bM in ipairs(c:GetChildren()) do ScanModelForButton(bM) end elseif c:IsA("Model") then ScanModelForButton(c) end end end
+                                if sF.Name == "Hills" then for _, d in ipairs(sF:GetDescendants()) do if d:IsA("Model") and d:FindFirstChild("Button") then ScanModelForButton(d) end end end
                             end
                         end
                         
                         if #btns > 0 then
-                            table.sort(btns, function(a,b) return a.Price < b.Price end)
-                            local tB = btns[1]
+                            table.sort(btns, function(a,b) return a.Price < b.Price end); local tB = btns[1]
                             TycoonStatusLbl.Text = "Status: Buying (" .. tB.Raw .. ")"
-                            
-                            char:PivotTo(tB.Part.CFrame * CFrame.new(0, 1, 0))
-                            hrp.Velocity = Vector3.zero
-                            hrp.RotVelocity = Vector3.zero
-                            task.wait(1 / SolaraManager.BuySpeed)
+                            char:PivotTo(tB.Part.CFrame * CFrame.new(0, 1, 0)); hrp.Velocity = Vector3.zero; hrp.RotVelocity = Vector3.zero; task.wait(1 / SolaraManager.BuySpeed)
                         else 
-                            TycoonStatusLbl.Text = "Status: No buttons found."
-                            task.wait(1) 
+                            TycoonStatusLbl.Text = "Status: No buttons found."; task.wait(1) 
                         end
                     end
                 end)
@@ -1444,9 +1220,7 @@ task.spawn(function()
             -- LOGIQUE AUTO FARM (LEMONS)
             if SolaraManager.ActiveFarmState ~= "Off" and char and hrp then
                 if tick() - SolaraManager.LastCacheUpdate >= 10 then
-                    SolaraManager.FarmCache = {}
-                    SolaraManager.SpecialCount = 0
-                    
+                    SolaraManager.FarmCache = {}; SolaraManager.SpecialCount = 0
                     for _, o in ipairs(workspace:GetDescendants()) do
                         if SolaraManager.ActiveFarmState == "Off" then break end
                         if o.Name == "LemonTree" then
@@ -1457,9 +1231,7 @@ task.spawn(function()
                                         local cd = cP:FindFirstChildOfClass("ClickDetector")
                                         if cd then
                                             local isS = (f:FindFirstChild("SpecialAttachment") ~= nil) or (cP:FindFirstChild("SpecialAttachment") ~= nil)
-                                            if isS then 
-                                                SolaraManager.SpecialCount = SolaraManager.SpecialCount + 1 
-                                            end
+                                            if isS then SolaraManager.SpecialCount = SolaraManager.SpecialCount + 1 end
                                             table.insert(SolaraManager.FarmCache, {Part=cP, Detector=cd, Special=isS})
                                         end
                                     end
@@ -1473,40 +1245,16 @@ task.spawn(function()
                 
                 if #SolaraManager.FarmCache > 0 then
                     local cF = table.remove(SolaraManager.FarmCache, 1)
-                    
-                    -- Mise à jour du status avec les fruits normaux et spéciaux
                     FarmStatusLbl.Text = string.format("Status: Harvesting (%d left, %d Special)", #SolaraManager.FarmCache, SolaraManager.SpecialCount)
-                    
                     if cF.Part and cF.Part.Parent then
-                        if cF.Special then 
-                            SolaraManager.SpecialCount = math.max(0, SolaraManager.SpecialCount - 1) 
-                        end
+                        if cF.Special then SolaraManager.SpecialCount = math.max(0, SolaraManager.SpecialCount - 1) end
                         pcall(function()
                             local tC = 1 / SolaraManager.FarmSpeed
-                            
-                            char:PivotTo(cF.Part.CFrame * CFrame.new(0, 0, 2.5))
-                            hrp.Velocity = Vector3.zero
-                            task.wait(math.max(0.15, tC * 0.4))
-                            
-                            if fireclickdetector then 
-                                fireclickdetector(cF.Detector) 
-                            end
-                            
-                            local cam = workspace.CurrentCamera
-                            cam.CameraType = Enum.CameraType.Scriptable
-                            cam.CFrame = CFrame.lookAt(cam.CFrame.Position, cF.Part.Position)
-                            task.wait(math.max(0.05, tC * 0.4))
-                            
-                            local sC = cam.ViewportSize / 2
-                            VirtualUser:Button1Down(sC)
-                            task.wait(0.05)
-                            VirtualUser:Button1Up(sC)
-                            
-                            cam.CameraType = Enum.CameraType.Custom
-                            if hrp then 
-                                cam.CFrame = CFrame.lookAt(cam.CFrame.Position, cam.CFrame.Position + hrp.CFrame.LookVector * 10) 
-                            end
-                            task.wait(math.max(0.1, tC * 0.2))
+                            char:PivotTo(cF.Part.CFrame * CFrame.new(0, 0, 2.5)); hrp.Velocity = Vector3.zero; task.wait(math.max(0.15, tC * 0.4))
+                            if fireclickdetector then fireclickdetector(cF.Detector) end
+                            local cam = workspace.CurrentCamera; cam.CameraType = Enum.CameraType.Scriptable; cam.CFrame = CFrame.lookAt(cam.CFrame.Position, cF.Part.Position); task.wait(math.max(0.05, tC * 0.4))
+                            local sC = cam.ViewportSize / 2; VirtualUser:Button1Down(sC); task.wait(0.05); VirtualUser:Button1Up(sC)
+                            cam.CameraType = Enum.CameraType.Custom; if hrp then cam.CFrame = CFrame.lookAt(cam.CFrame.Position, cam.CFrame.Position + hrp.CFrame.LookVector * 10) end; task.wait(math.max(0.1, tC * 0.2))
                         end)
                     end
                 else 
