@@ -1,10 +1,10 @@
 --[[ 
-    Leyley's Premium Cheat V6.11 - THE COMPLETONIST UPDATE
-    - Fix: Tycoon Auto-Buy status label now correctly displays the suffix (PriceMag) next to the price.
-    - Info: All themes, 100+ suffixes, full config saving, and strict folders check are present.
+    Leyley's Premium Cheat V6.12 - THE COMPLETONIST UPDATE
+    - Added: ESP now shows Player Name and Health (BillboardGui AlwaysOnTop) across the map.
+    - Info: All themes, 100+ suffixes, config saving, and strict folders check are present.
 ]]--
 
-print("Leyley's Premium Cheat V6.11 loaded")
+print("Leyley's Premium Cheat V6.12 loaded")
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -68,7 +68,7 @@ end
 
 -- [ 3. STATE MANAGER ]
 local SolaraManager = {
-    GuiName = "LeyleysCheat_V6_11", CurrentThemeName = "Default", CurrentTheme = Themes.Default, ActiveTab = "Player",
+    GuiName = "LeyleysCheat_V6_12", CurrentThemeName = "Default", CurrentTheme = Themes.Default, ActiveTab = "Player",
     ThemeObjects = { Backgrounds={}, Panels={}, Accents={}, Strokes={}, Texts={}, Dividers={} },
     UI = { TabButtons={}, Pages={}, PlaylistInputs={}, Toggles={}, Inputs={}, Texts={} },
     IsClicking=false, IsAntiAfk=false, IsNoclip=false, IsESP=false, SpeedOverride=nil, JumpOverride=nil, SelectedTarget=nil,
@@ -142,7 +142,7 @@ local SG = Instance.new("ScreenGui"); SG.Name=SolaraManager.GuiName; SG.ResetOnS
 local ResB = Button(SG, "ResB", "➕ Open", UDim2.new(0,80,0,40), UDim2.new(0,20,1,-60), SolaraManager.CurrentTheme.Accent, "Accents"); ResB.Visible=false; ResB.ZIndex=10
 local Main = Frame(SG, "Main", UDim2.new(0,800,0,480), UDim2.new(0.5,-400,0.5,-240)); Main.ClipsDescendants=true; UICorner(Main,8); SolaraManager.UI.MainFrameStroke = UIStroke(Main, SolaraManager.CurrentTheme.Accent, 2)
 local TBar = Frame(Main, "TBar", UDim2.new(1,0,0,40), UDim2.new(), SolaraManager.CurrentTheme.PanelBg, "Panels"); Drag(Main, TBar)
-local TLbl = Label(TBar, "TLbl", "  ✨ Leyley's Premium Cheat V6.11", UDim2.new(1,-100,1,0), UDim2.new(), Enum.TextXAlignment.Left); TLbl.Font=Enum.Font.GothamBold
+local TLbl = Label(TBar, "TLbl", "  ✨ Leyley's Premium Cheat V6.12", UDim2.new(1,-100,1,0), UDim2.new(), Enum.TextXAlignment.Left); TLbl.Font=Enum.Font.GothamBold
 local ClsB = Button(TBar, "ClsB", "X", UDim2.new(0,30,0,30), UDim2.new(1,-35,0,5), SolaraManager.CurrentTheme.Danger, nil)
 local MinB = Button(TBar, "MinB", "-", UDim2.new(0,30,0,30), UDim2.new(1,-70,0,5), SolaraManager.CurrentTheme.Warning, nil)
 
@@ -300,7 +300,8 @@ task.spawn(function()
         local cm = SolaraManager.CustomMusicInstance; local msl = SolaraManager.UI.MusicStatusLbl
         if cm and cm.IsLoaded then local p=cm.TimePosition; local l=cm.TimeLength; if msl then msl.Text=string.format("Now Playing: %s | %02d:%02d / %02d:%02d", SolaraManager.CustomMusicName, p/60, p%60, l/60, l%60) end else if msl and msl.Text~="Status: No music playing" then msl.Text="Status: No music playing" end end
         
-        pcall(function() local eF=CoreGui:FindFirstChild("LeyleyESP"); if not eF then eF=Instance.new("Folder", CoreGui); eF.Name="LeyleyESP" end; if SolaraManager.IsESP then for _,p in ipairs(Players:GetPlayers()) do if p~=LocalPlayer and p.Character then local h=eF:FindFirstChild(p.Name.."_ESP"); if not h then h=Instance.new("Highlight", eF); h.Name=p.Name.."_ESP"; h.FillColor=Color3.new(1,0,0); h.OutlineColor=Color3.new(1,1,1) end; h.Adornee=p.Character end end else eF:ClearAllChildren() end end)
+        -- ESP UPDATE: Now shows Name & Health AlwaysOnTop
+        pcall(function() local eF=CoreGui:FindFirstChild("LeyleyESP"); if not eF then eF=Instance.new("Folder", CoreGui); eF.Name="LeyleyESP" end; if SolaraManager.IsESP then for _,p in ipairs(Players:GetPlayers()) do if p~=LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") then local h=eF:FindFirstChild(p.Name.."_ESP"); if not h then h=Instance.new("Highlight", eF); h.Name=p.Name.."_ESP"; h.FillColor=Color3.new(1,0,0); h.OutlineColor=Color3.new(1,1,1) end; h.Adornee=p.Character; local bg=eF:FindFirstChild(p.Name.."_BG"); if not bg then bg=Instance.new("BillboardGui", eF); bg.Name=p.Name.."_BG"; bg.AlwaysOnTop=true; bg.Size=UDim2.new(0,200,0,50); bg.ExtentsOffset=Vector3.new(0,3,0); local tl=Instance.new("TextLabel", bg); tl.Name="Txt"; tl.Size=UDim2.new(1,0,1,0); tl.BackgroundTransparency=1; tl.Font=Enum.Font.GothamBold; tl.TextSize=14; tl.TextColor3=Color3.new(1,1,1); tl.TextStrokeTransparency=0; tl.TextStrokeColor3=Color3.new(0,0,0) end; bg.Adornee=p.Character.HumanoidRootPart; bg.Txt.Text=string.format("%s\n❤ %d / %d", p.Name, math.floor(p.Character.Humanoid.Health), math.floor(p.Character.Humanoid.MaxHealth)) end end else eF:ClearAllChildren() end end)
         
         pcall(function() local cl=LocalPlayer.PlayerGui:FindFirstChild("HUD") and LocalPlayer.PlayerGui.HUD:FindFirstChild("Balance") and LocalPlayer.PlayerGui.HUD.Balance:FindFirstChild("Main") and LocalPlayer.PlayerGui.HUD.Balance.Main:FindFirstChild("Cash")
             if cl and cl:IsA("TextLabel") then
@@ -326,7 +327,6 @@ task.spawn(function()
                     if SolaraManager.MyTycoon then
                         local bL={}; 
                         
-                        -- FIX: Extract string with suffix properly for UI Display
                         local function sB(m) 
                             if m and m:FindFirstChild("Button") and m.Button:IsA("BasePart") then 
                                 local g=m.Button:FindFirstChild("Gui") or m:FindFirstChild("Gui"); 
