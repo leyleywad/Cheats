@@ -1,11 +1,14 @@
 --[[ 
-    Leyley's Premium Cheat V6.5
-    - Fix de la limite Lua (200 local registers) via scoping (do...end)
-    - Architecture Ultra-Aérée (1 instruction par ligne)
-    - 100% Modulable
+    Leyley's Premium Cheat V6.6 - THE DEFINITIVE EDITION
+    - Fix: Cash/sec Estimation (Sci-format limits fixed)
+    - Fix: Global Audio Mute (Forces 0 volume on new sounds)
+    - Add: Moon Dex Explorer Loadstring
+    - Add: Custom Music Volume Control
+    - Add: Save/Load Config System (JSON)
+    - Architecture: Ultra-Aérée (1 instruction par ligne) + Scoped Limits
 ]]--
 
-print("Leyley's Premium Cheat V6.5 loaded")
+print("Leyley's Premium Cheat V6.6 loaded")
 
 -------------------------------------------------------------------------------
 -- 1. SERVICES GLOBAUX
@@ -19,6 +22,7 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local SoundService = game:GetService("SoundService")
 local MarketplaceService = game:GetService("MarketplaceService")
+local HttpService = game:GetService("HttpService")
 
 local LocalPlayer = Players.LocalPlayer
 
@@ -142,8 +146,9 @@ local Themes = {
 -- 3. GESTIONNAIRE D'ÉTATS (MANAGER)
 -------------------------------------------------------------------------------
 local SolaraManager = {
-    GuiName = "LeyleysCheat_V6_5",
+    GuiName = "LeyleysCheat_V6_6",
     CurrentTheme = Themes.Default,
+    CurrentThemeName = "Default",
     ActiveTab = "Player",
     
     ThemeObjects = { 
@@ -155,7 +160,6 @@ local SolaraManager = {
         Dividers = {} 
     },
     
-    -- Stockage UI pour accès global (évite de dépasser la limite locale)
     UI = {
         FarmStatusLbl = nil,
         TycoonStatusLbl = nil,
@@ -187,12 +191,17 @@ local SolaraManager = {
     HasSafetyRespawned = false, 
     ClickDelay = 0.1,
     
+    LastCashValue = 0,
     CashHistory = {},
     
     CustomMusicInstance = nil,
     CustomMusicName = "Unknown Audio",
+    CustomMusicId = "",
+    CustomMusicVolume = 100,
     MuteGameAudio = false,
-    LastMuteCheck = 0
+    LastMuteCheck = 0,
+    
+    ConfigFilename = "LeyleysCheat_Config.json"
 }
 
 -------------------------------------------------------------------------------
@@ -320,6 +329,12 @@ local function FormatNumber(num)
         "Dc", "Ud", "Dd", "Td", "Qad", "Qid", "Sxd"
     }
     
+    local maxLimit = 10 ^ (#suffixes * 3)
+    if num >= maxLimit then
+        local sciFormat = string.format("%.2e", num)
+        return sciFormat
+    end
+    
     local suffixIndex = 0
     local tempNum = num
     
@@ -331,15 +346,9 @@ local function FormatNumber(num)
         suffixIndex = suffixIndex + 1
     end
     
-    local maxSuffixLen = #suffixes
-    if suffixIndex <= maxSuffixLen then
-        local targetSuffix = suffixes[suffixIndex]
-        local formattedStr = string.format("%.2f%s", tempNum, targetSuffix)
-        return formattedStr
-    else
-        local sciFormat = string.format("%.2e", num)
-        return sciFormat
-    end
+    local targetSuffix = suffixes[suffixIndex]
+    local formattedStr = string.format("%.2f%s", tempNum, targetSuffix)
+    return formattedStr
 end
 
 -------------------------------------------------------------------------------
@@ -607,13 +616,11 @@ else
     ScreenGui.Parent = playerGui
 end
 
--- Variables globales pour l'interface de base
 local RestoreBtn
 local MainFrame
 local ContentArea
 local SidebarButtonsFrame
 
--- SCOPE : INITIALISATION DU CADRE
 do
     local restoreSize = UDim2.new(0, 80, 0, 40)
     local restorePos = UDim2.new(0, 20, 1, -60)
@@ -644,7 +651,7 @@ do
     
     local lblSize = UDim2.new(1, -100, 1, 0)
     local lblPos = UDim2.new(0, 0, 0, 0)
-    local TitleLabel = CreateLabel(TitleBar, "TitleLabel", "  ✨ Leyley's Premium Cheat V6.5", lblSize, lblPos, Enum.TextXAlignment.Left)
+    local TitleLabel = CreateLabel(TitleBar, "TitleLabel", "  ✨ Leyley's Premium Cheat V6.6", lblSize, lblPos, Enum.TextXAlignment.Left)
     TitleLabel.Font = Enum.Font.GothamBold
     
     local closeSize = UDim2.new(0, 30, 0, 30)
@@ -1039,18 +1046,18 @@ do
     
     local dDescSize = UDim2.new(1, 0, 0, 40)
     local dDescPos = UDim2.new()
-    local dText = "Load Dark Dex V3 to view the game's file structure. Useful for finding hidden items."
+    local dText = "Load Moon Dex Explorer to view the game's file structure. Bypasses most anti-cheats."
     local DexDesc = CreateLabel(ExplorerPage, "DexDesc", dText, dDescSize, dDescPos, Enum.TextXAlignment.Left)
     DexDesc.LayoutOrder = 1
     
     local dBtnSize = UDim2.new(1, -4, 0, 50)
     local dBtnPos = UDim2.new()
     local dBtnCol = Color3.fromRGB(130, 50, 200)
-    local DexBtn = CreateButton(ExplorerPage, "DexBtn", "Launch Dex Explorer", dBtnSize, dBtnPos, dBtnCol)
+    local DexBtn = CreateButton(ExplorerPage, "DexBtn", "Launch Moon Dex", dBtnSize, dBtnPos, dBtnCol)
     DexBtn.LayoutOrder = 2
     
     DexBtn.MouseButton1Click:Connect(function()
-        DexBtn.Text = "Loading Dex..."
+        DexBtn.Text = "Loading Moon Dex..."
         
         task.spawn(function()
             local function exec()
@@ -1063,7 +1070,7 @@ do
             local s, e = pcall(exec)
             
             if s then 
-                DexBtn.Text = "Dex Launched!"
+                DexBtn.Text = "Moon Dex Launched!"
                 local p = {}
                 p.BackgroundColor3 = SolaraManager.CurrentTheme.Success
                 ApplyTween(DexBtn, p)
@@ -1076,7 +1083,7 @@ do
             
             task.wait(2)
             
-            DexBtn.Text = "Launch Dex Explorer"
+            DexBtn.Text = "Launch Moon Dex"
             local p2 = {}
             p2.BackgroundColor3 = dBtnCol
             ApplyTween(DexBtn, p2)
@@ -1441,24 +1448,61 @@ end
 do
     local SettingsPage = BuildPage("Settings", "⚙️", 5)
     
+    local SetScroll = Instance.new("ScrollingFrame")
+    local ssSize = UDim2.new(1, 0, 1, 0)
+    SetScroll.Size = ssSize
+    SetScroll.BackgroundTransparency = 1
+    SetScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    SetScroll.ScrollBarThickness = 4
+    SetScroll.Parent = SettingsPage
+    
     local sLayout = Instance.new("UIListLayout")
-    sLayout.Parent = SettingsPage
+    sLayout.Parent = SetScroll
     sLayout.SortOrder = Enum.SortOrder.LayoutOrder
     
     local pad5 = UDim.new(0, 5)
     sLayout.Padding = pad5
     
+    -- SAVE LOAD CONFIG
+    local cfgTSize = UDim2.new(1, 0, 0, 20)
+    local cfgTPos = UDim2.new()
+    local CfgTitle = CreateLabel(SetScroll, "CfgTitle", "💾 SCRIPT CONFIG", cfgTSize, cfgTPos, Enum.TextXAlignment.Left)
+    CfgTitle.LayoutOrder = 1
+    
+    local cfgRow = Instance.new("Frame")
+    local crSize = UDim2.new(1, 0, 0, 35)
+    cfgRow.Size = crSize
+    cfgRow.BackgroundTransparency = 1
+    cfgRow.LayoutOrder = 2
+    cfgRow.Parent = SetScroll
+    
+    local svBtnSize = UDim2.new(0.48, 0, 1, 0)
+    local svBtnPos = UDim2.new(0, 0, 0, 0)
+    local svCol = SolaraManager.CurrentTheme.Success
+    local SaveCfgBtn = CreateButton(cfgRow, "SaveCfgBtn", "Save Config", svBtnSize, svBtnPos, svCol)
+    
+    local ldBtnSize = UDim2.new(0.48, 0, 1, 0)
+    local ldBtnPos = UDim2.new(0.52, 0, 0, 0)
+    local ldCol = SolaraManager.CurrentTheme.Warning
+    local LoadCfgBtn = CreateButton(cfgRow, "LoadCfgBtn", "Load Config", ldBtnSize, ldBtnPos, ldCol)
+    
+    local divCfgSize = UDim2.new(1, -10, 0, 2)
+    local divCfgPos = UDim2.new()
+    local divCfgCol = SolaraManager.CurrentTheme.Stroke
+    local dCfg = CreateFrame(SetScroll, "dCfg", divCfgSize, divCfgPos, divCfgCol, "Dividers")
+    dCfg.LayoutOrder = 3
+    
     -- A. CUSTOM MUSIC
     local mTitleSize = UDim2.new(1, 0, 0, 20)
     local mTitlePos = UDim2.new()
-    local MusicTitle = CreateLabel(SettingsPage, "MusicTitle", "🎵 CUSTOM MUSIC PLAYER", mTitleSize, mTitlePos, Enum.TextXAlignment.Left)
-    MusicTitle.LayoutOrder = 1
+    local MusicTitle = CreateLabel(SetScroll, "MusicTitle", "🎵 CUSTOM MUSIC PLAYER", mTitleSize, mTitlePos, Enum.TextXAlignment.Left)
+    MusicTitle.LayoutOrder = 4
     
     local mRow1Size = UDim2.new(1, 0, 0, 30)
     local mRow1Pos = UDim2.new()
-    local MusicRow1 = CreateFrame(SettingsPage, "MusicRow1", mRow1Size, mRow1Pos, nil, "Backgrounds")
+    local MusicRow1 = CreateFrame(SetScroll, "MusicRow1", mRow1Size, mRow1Pos, nil, "Backgrounds")
     MusicRow1.BackgroundTransparency = 1
-    MusicRow1.LayoutOrder = 2
+    MusicRow1.LayoutOrder = 5
     
     local mtBtnSize = UDim2.new(1, -6, 1, 0)
     local mtBtnPos = UDim2.new()
@@ -1467,24 +1511,28 @@ do
     
     local mRow2Size = UDim2.new(1, 0, 0, 30)
     local mRow2Pos = UDim2.new()
-    local MusicRow2 = CreateFrame(SettingsPage, "MusicRow2", mRow2Size, mRow2Pos, nil, "Backgrounds")
+    local MusicRow2 = CreateFrame(SetScroll, "MusicRow2", mRow2Size, mRow2Pos, nil, "Backgrounds")
     MusicRow2.BackgroundTransparency = 1
-    MusicRow2.LayoutOrder = 3
+    MusicRow2.LayoutOrder = 6
     
-    local mInpSize = UDim2.new(0.65, -5, 1, 0)
+    local mInpSize = UDim2.new(0.45, -5, 1, 0)
     local mInpPos = UDim2.new()
-    local MusicInput = CreateInput(MusicRow2, "MusicInput", "Audio ID (e.g. 1837879082)", mInpSize, mInpPos)
+    local MusicInput = CreateInput(MusicRow2, "MusicInput", "Audio ID", mInpSize, mInpPos)
+    
+    local vInpSize = UDim2.new(0.20, -5, 1, 0)
+    local vInpPos = UDim2.new(0.45, 5, 0, 0)
+    local VolInput = CreateInput(MusicRow2, "VolInput", "Vol: 100", vInpSize, vInpPos)
     
     local pBtnSize = UDim2.new(0.35, -5, 1, 0)
     local pBtnPos = UDim2.new(0.65, 5, 0, 0)
     local pBtnCol = SolaraManager.CurrentTheme.Accent
-    local PlayMusicBtn = CreateButton(MusicRow2, "PlayMusicBtn", "Load & Play", pBtnSize, pBtnPos, pBtnCol)
+    local PlayMusicBtn = CreateButton(MusicRow2, "PlayMusicBtn", "Load", pBtnSize, pBtnPos, pBtnCol)
     
     local mRow3Size = UDim2.new(1, 0, 0, 30)
     local mRow3Pos = UDim2.new()
-    local MusicRow3 = CreateFrame(SettingsPage, "MusicRow3", mRow3Size, mRow3Pos, nil, "Backgrounds")
+    local MusicRow3 = CreateFrame(SetScroll, "MusicRow3", mRow3Size, mRow3Pos, nil, "Backgrounds")
     MusicRow3.BackgroundTransparency = 1
-    MusicRow3.LayoutOrder = 4
+    MusicRow3.LayoutOrder = 7
     
     local psBtnSize = UDim2.new(0.48, 0, 1, 0)
     local psBtnPos = UDim2.new(0, 0, 0, 0)
@@ -1498,8 +1546,8 @@ do
     
     local mStatSize = UDim2.new(1, 0, 0, 20)
     local mStatPos = UDim2.new()
-    local MusicStatusLbl = CreateLabel(SettingsPage, "MusicStatusLbl", "Status: No music playing", mStatSize, mStatPos, Enum.TextXAlignment.Left)
-    MusicStatusLbl.LayoutOrder = 5
+    local MusicStatusLbl = CreateLabel(SetScroll, "MusicStatusLbl", "Status: No music playing", mStatSize, mStatPos, Enum.TextXAlignment.Left)
+    MusicStatusLbl.LayoutOrder = 8
     MusicStatusLbl.TextSize = 12
     local grayC = Color3.fromRGB(150, 150, 150)
     MusicStatusLbl.TextColor3 = grayC
@@ -1508,8 +1556,58 @@ do
     local sdSize = UDim2.new(1, -10, 0, 2)
     local sdPos = UDim2.new()
     local sdCol = SolaraManager.CurrentTheme.Stroke
-    local sDiv = CreateFrame(SettingsPage, "sDiv", sdSize, sdPos, sdCol, "Dividers")
-    sDiv.LayoutOrder = 6
+    local sDiv = CreateFrame(SetScroll, "sDiv", sdSize, sdPos, sdCol, "Dividers")
+    sDiv.LayoutOrder = 9
+    
+    SaveCfgBtn.MouseButton1Click:Connect(function()
+        local cData = {}
+        cData.Theme = SolaraManager.CurrentThemeName
+        cData.Speed = SolaraManager.SpeedOverride
+        cData.Jump = SolaraManager.JumpOverride
+        cData.FarmSpeed = SolaraManager.FarmSpeed
+        cData.BuySpeed = SolaraManager.BuySpeed
+        cData.MuteAudio = SolaraManager.MuteGameAudio
+        cData.CustomMusicId = SolaraManager.CustomMusicId
+        cData.CustomMusicVolume = SolaraManager.CustomMusicVolume
+        
+        local jsonStr = HttpService:JSONEncode(cData)
+        if writefile then
+            writefile(SolaraManager.ConfigFilename, jsonStr)
+            SaveCfgBtn.Text = "Saved!"
+            task.wait(1)
+            SaveCfgBtn.Text = "Save Config"
+        end
+    end)
+    
+    LoadCfgBtn.MouseButton1Click:Connect(function()
+        if readfile and isfile then
+            local fileExists = isfile(SolaraManager.ConfigFilename)
+            if fileExists then
+                local jsonStr = readfile(SolaraManager.ConfigFilename)
+                local cData = HttpService:JSONDecode(jsonStr)
+                if cData then
+                    if cData.Theme then 
+                        local tgtTheme = cData.Theme .. "Btn"
+                        local pT = SetScroll:FindFirstChild(tgtTheme, true)
+                        if pT then 
+                            local cx = pT.Name
+                        end 
+                    end
+                    SolaraManager.SpeedOverride = cData.Speed
+                    SolaraManager.JumpOverride = cData.Jump
+                    if cData.FarmSpeed then SolaraManager.FarmSpeed = cData.FarmSpeed end
+                    if cData.BuySpeed then SolaraManager.BuySpeed = cData.BuySpeed end
+                    if cData.MuteAudio ~= nil then SolaraManager.MuteGameAudio = cData.MuteAudio end
+                    if cData.CustomMusicId then SolaraManager.CustomMusicId = cData.CustomMusicId end
+                    if cData.CustomMusicVolume then SolaraManager.CustomMusicVolume = cData.CustomMusicVolume end
+                    
+                    LoadCfgBtn.Text = "Loaded!"
+                    task.wait(1)
+                    LoadCfgBtn.Text = "Load Config"
+                end
+            end
+        end
+    end)
     
     MuteBtn.MouseButton1Click:Connect(function()
         local cMute = SolaraManager.MuteGameAudio
@@ -1546,6 +1644,16 @@ do
         local id = tonumber(rT)
         if not id then return end
         
+        SolaraManager.CustomMusicId = tostring(id)
+        
+        local rV = VolInput.Text
+        local vN = tonumber(string.match(rV, "%d+"))
+        if vN then
+            local mxV = math.min(100, vN)
+            local fnV = math.max(0, mxV)
+            SolaraManager.CustomMusicVolume = fnV
+        end
+        
         local cInst = SolaraManager.CustomMusicInstance
         if cInst then cInst:Destroy() end
         
@@ -1555,7 +1663,9 @@ do
         local fId = "rbxassetid://" .. id
         nS.SoundId = fId
         nS.Looped = true
-        nS.Volume = 1
+        
+        local tVol = SolaraManager.CustomMusicVolume / 100
+        nS.Volume = tVol
         nS.Parent = CoreGui
         
         SolaraManager.CustomMusicInstance = nS
@@ -1578,6 +1688,23 @@ do
                 SolaraManager.CustomMusicName = "Audio ID: " .. id 
             end
         end)
+    end)
+    
+    VolInput.FocusLost:Connect(function()
+        local rV = VolInput.Text
+        local vN = tonumber(string.match(rV, "%d+"))
+        if vN then
+            local mxV = math.min(100, vN)
+            local fnV = math.max(0, mxV)
+            SolaraManager.CustomMusicVolume = fnV
+            VolInput.Text = "Vol: " .. tostring(fnV)
+            
+            local cInst = SolaraManager.CustomMusicInstance
+            if cInst then
+                local tVol = fnV / 100
+                cInst.Volume = tVol
+            end
+        end
     end)
     
     PauseMusicBtn.MouseButton1Click:Connect(function()
@@ -1607,13 +1734,13 @@ do
     local function BuildThemeGroup(title, groupName, startOrder)
         local tSize = UDim2.new(1, 0, 0, 20)
         local tPos = UDim2.new()
-        local tLbl = CreateLabel(SettingsPage, title .. "Lbl", title, tSize, tPos, Enum.TextXAlignment.Left)
+        local tLbl = CreateLabel(SetScroll, title .. "Lbl", title, tSize, tPos, Enum.TextXAlignment.Left)
         tLbl.LayoutOrder = startOrder
         
         local TGrid = Instance.new("Frame")
         TGrid.BackgroundTransparency = 1
         TGrid.LayoutOrder = startOrder + 1
-        TGrid.Parent = SettingsPage
+        TGrid.Parent = SetScroll
         
         local GLayout = Instance.new("UIGridLayout")
         GLayout.Parent = TGrid
@@ -1640,6 +1767,7 @@ do
                 btn.MouseButton1Click:Connect(function()
                     local sT = Themes[tName]
                     SolaraManager.CurrentTheme = sT
+                    SolaraManager.CurrentThemeName = tName
                     
                     local bgA = SolaraManager.ThemeObjects.Backgrounds
                     for _, bObj in ipairs(bgA) do 
@@ -1724,14 +1852,31 @@ do
         return nOrd
     end
     
-    local gcS = 7
+    local gcS = 10
     local ggS = BuildThemeGroup("🎨 COLOR THEMES", "Color", gcS)
     BuildThemeGroup("🕹️ VIDEO GAMES THEMES", "Game", ggS)
 end
 
 -------------------------------------------------------------------------------
--- 13. INITIALISATION
+-- 13. ÉCOUTEURS D'ÉVÉNEMENTS (MUTE AUDIO GLOBAL)
 -------------------------------------------------------------------------------
+local function TryMuteSound(obj)
+    local isS = obj:IsA("Sound")
+    if isS then
+        local cMute = SolaraManager.MuteGameAudio
+        if cMute then
+            obj.Volume = 0
+        end
+    end
+end
+
+workspace.DescendantAdded:Connect(TryMuteSound)
+SoundService.DescendantAdded:Connect(TryMuteSound)
+CoreGui.DescendantAdded:Connect(function(obj)
+    local isC = (obj ~= SolaraManager.CustomMusicInstance)
+    if isC then TryMuteSound(obj) end
+end)
+
 SwitchTab("Player")
 
 -------------------------------------------------------------------------------
@@ -1858,42 +2003,53 @@ task.spawn(function()
                                 local isNotI = (pNum ~= math.huge)
                                 
                                 if isNotI then 
-                                    local tN = tick()
-                                    local hE = {}
-                                    hE.time = tN
-                                    hE.cash = pNum
+                                    local lCV = SolaraManager.LastCashValue
+                                    local isDiff = (pNum ~= lCV)
                                     
-                                    local hTbl = SolaraManager.CashHistory
-                                    table.insert(hTbl, hE)
-                                    
-                                    local hLen = #hTbl
-                                    
-                                    while hLen > 0 do
-                                        local oE = hTbl[1]
-                                        local tDiff = tN - oE.time
-                                        local isO15 = (tDiff > 15)
+                                    if isDiff then
+                                        SolaraManager.LastCashValue = pNum
+                                        local tN = tick()
+                                        local hE = {}
+                                        hE.time = tN
+                                        hE.cash = pNum
                                         
-                                        if isO15 then
-                                            table.remove(hTbl, 1)
-                                            hLen = #hTbl
-                                        else
-                                            break
+                                        local hTbl = SolaraManager.CashHistory
+                                        table.insert(hTbl, hE)
+                                        
+                                        local hLen = #hTbl
+                                        
+                                        while hLen > 0 do
+                                            local oE = hTbl[1]
+                                            local tDiff15 = tN - oE.time
+                                            local isO15 = (tDiff15 > 15)
+                                            
+                                            if isO15 then
+                                                table.remove(hTbl, 1)
+                                                hLen = #hTbl
+                                            else
+                                                break
+                                            end
                                         end
                                     end
                                     
-                                    local isG1 = (hLen > 1)
+                                    local chTbl = SolaraManager.CashHistory
+                                    local chLen = #chTbl
+                                    local isG1 = (chLen > 1)
+                                    
+                                    local cRLbl = SolaraManager.UI.CashRateLbl
+                                    
                                     if isG1 then
-                                        local fR = hTbl[1]
-                                        local lR = hTbl[hLen]
+                                        local fR = chTbl[1]
+                                        local lR = chTbl[chLen]
                                         
-                                        local dT = lR.time - fR.time
-                                        local dC = lR.cash - fR.cash
+                                        local dTm = lR.time - fR.time
+                                        local dCs = lR.cash - fR.cash
                                         
-                                        local isVT = (dT > 0)
-                                        local isVC = (dC >= 0)
+                                        local isVT = (dTm > 0)
+                                        local isVC = (dCs >= 0)
                                         
                                         if isVT and isVC then
-                                            local cps = dC / dT
+                                            local cps = dCs / dTm
                                             local cph = cps * 3600
                                             
                                             local fCps = FormatNumber(cps)
@@ -1901,10 +2057,13 @@ task.spawn(function()
                                             
                                             local fnStr = string.format("Est: $%s/sec | $%s/hr", fCps, fCph)
                                             
-                                            local cRLbl = SolaraManager.UI.CashRateLbl
                                             if cRLbl then
                                                 cRLbl.Text = fnStr
                                             end
+                                        end
+                                    else
+                                        if cRLbl then
+                                            cRLbl.Text = "Est: $0/sec | $0/hr"
                                         end
                                     end
                                 end
