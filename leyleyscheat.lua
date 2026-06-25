@@ -1,6 +1,6 @@
---[[ Leyley's cheat V5.7 ]]--
+--[[ Leyley's cheat V5.8 ]]--
 
-print("Leyley's cheat V5.7 loaded")
+print("Leyley's cheat V5.8 loaded")
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -91,7 +91,7 @@ local function ParsePrice(str)
 end
 
 local SolaraManager = {
-    GuiName = "LeyleysCheat_V5_7",
+    GuiName = "LeyleysCheat_V5_8",
     ActiveTab = "Game",
     CurrentTheme = Themes.Default,
     
@@ -115,6 +115,7 @@ local SolaraManager = {
     LastCacheUpdate = 0, 
     
     HasSafetyRespawned = false,
+    ActiveAutoUpgrade = false,
     
     ThemeObjects = { Backgrounds = {}, Panels = {}, Accents = {}, Strokes = {}, Texts = {} }
 }
@@ -586,6 +587,28 @@ BuyActionFrame.LayoutOrder = 10
 local AutoBuyBtn, _ = CreateButton(BuyActionFrame, "AutoBuyBtn", "Auto Buy: OFF", UDim2.new(0.48,0,1,0), UDim2.new(0,0,0,0), SolaraManager.CurrentTheme.Danger)
 local SafeBuyBtn, _ = CreateButton(BuyActionFrame, "SafeBuyBtn", "Safe Buy: OFF", UDim2.new(0.48,0,1,0), UDim2.new(0.52,0,0,0), SolaraManager.CurrentTheme.Danger)
 
+local Divider2 = Instance.new("Frame", TycoonLemonScroll)
+Divider2.Size = UDim2.new(0.8, 0, 0, 2)
+Divider2.BackgroundColor3 = SolaraManager.CurrentTheme.Stroke
+Divider2.BorderSizePixel = 0
+Divider2.LayoutOrder = 11
+table.insert(SolaraManager.ThemeObjects.Strokes, Divider2)
+
+local UpgradeTitle = CreateLabel(TycoonLemonScroll, "UpgradeTitle", "📈 AUTO UPGRADES", UDim2.new(1,0,0,30), UDim2.new())
+UpgradeTitle.LayoutOrder = 12
+
+local CurrentCashLbl = CreateLabel(TycoonLemonScroll, "CurrentCashLbl", "Current Cash: $0", UDim2.new(1,0,0,20), UDim2.new())
+CurrentCashLbl.Font = Enum.Font.Gotham
+CurrentCashLbl.TextColor3 = SolaraManager.CurrentTheme.Success
+CurrentCashLbl.LayoutOrder = 13
+
+local UpgradeActionFrame = Instance.new("Frame", TycoonLemonScroll)
+UpgradeActionFrame.Size = UDim2.new(0.9, 0, 0, 40)
+UpgradeActionFrame.BackgroundTransparency = 1
+UpgradeActionFrame.LayoutOrder = 14
+
+local AutoUpgradeBtn, _ = CreateButton(UpgradeActionFrame, "AutoUpgradeBtn", "Auto Upgrade: OFF", UDim2.new(1,0,1,0), UDim2.new(0,0,0,0), SolaraManager.CurrentTheme.Danger)
+
 local function UpdateActionUI()
     FarmBtn.Text = (SolaraManager.ActiveFarmState == "Normal") and "Auto Farm: ON" or "Auto Farm: OFF"
     ApplyTween(FarmBtn, {BackgroundColor3 = (SolaraManager.ActiveFarmState == "Normal") and SolaraManager.CurrentTheme.Success or SolaraManager.CurrentTheme.Danger})
@@ -636,6 +659,12 @@ SafeBuyBtn.MouseButton1Click:Connect(function()
     UpdateActionUI()
 end)
 
+AutoUpgradeBtn.MouseButton1Click:Connect(function()
+    SolaraManager.ActiveAutoUpgrade = not SolaraManager.ActiveAutoUpgrade
+    AutoUpgradeBtn.Text = SolaraManager.ActiveAutoUpgrade and "Auto Upgrade: ON" or "Auto Upgrade: OFF"
+    ApplyTween(AutoUpgradeBtn, {BackgroundColor3 = SolaraManager.ActiveAutoUpgrade and SolaraManager.CurrentTheme.Success or SolaraManager.CurrentTheme.Danger})
+end)
+
 local SoonConfig = Instance.new("Frame", GameContentFrame)
 SoonConfig.Size = UDim2.new(1, 0, 1, 0)
 SoonConfig.BackgroundTransparency = 1
@@ -669,6 +698,65 @@ task.spawn(function()
             pcall(function() 
                 local tool = char and char:FindFirstChildOfClass("Tool")
                 if tool then tool:Activate() end 
+            end)
+        end
+        
+        -- SYSTEME DE CASH POUR LES UPGRADES
+        local currentCashNum = 0
+        pcall(function()
+            local cashLbl = LocalPlayer.PlayerGui:FindFirstChild("HUD").Balance.Main.Cash
+            if cashLbl and cashLbl:IsA("TextLabel") then
+                local txt = cashLbl.Text
+                CurrentCashLbl.Text = "Current Cash: " .. txt
+                local parsed = ParsePrice(txt)
+                if parsed ~= math.huge then
+                    currentCashNum = parsed
+                end
+            end
+        end)
+        
+        if SolaraManager.ActiveAutoUpgrade then
+            pcall(function()
+                local manageMenu = LocalPlayer.PlayerGui:FindFirstChild("Manage")
+                if manageMenu then
+                    local manageFrame = manageMenu.ManageMenu.Body.Frame.Manage
+                    for _, child in ipairs(manageFrame:GetChildren()) do
+                        if string.match(child.Name, "^Lemon") then
+                            local upgradeBtn = child:FindFirstChild("Upgrade", true)
+                            if upgradeBtn and upgradeBtn:IsA("GuiButton") then
+                                
+                                local priceNum = math.huge
+                                
+                                -- Recherche du prix exact
+                                for _, v in ipairs(child:GetDescendants()) do
+                                    if v:IsA("TextLabel") and (string.match(v.Text, "%$") or string.match(v.Name, "Price") or string.match(v.Name, "Cost")) then
+                                        local p = ParsePrice(v.Text)
+                                        if p ~= math.huge then
+                                            priceNum = p
+                                            break
+                                        end
+                                    end
+                                end
+                                
+                                -- Secours : si le prix est écrit sur le bouton lui-même
+                                if priceNum == math.huge then
+                                    local p = ParsePrice(upgradeBtn.Text)
+                                    if p ~= math.huge then priceNum = p end
+                                end
+                                
+                                -- Si on a l'argent (et qu'on a bien trouvé un prix valide)
+                                if currentCashNum > 0 and currentCashNum >= priceNum then
+                                    if firesignal then
+                                        pcall(function() firesignal(upgradeBtn.MouseButton1Click) end)
+                                        pcall(function() firesignal(upgradeBtn.Activated) end)
+                                    end
+                                    -- Petit délai pour ne pas lagger si on achète beaucoup d'un coup
+                                    task.wait(0.05)
+                                end
+                            end
+                        end
+                    end
+                end
             end)
         end
         
