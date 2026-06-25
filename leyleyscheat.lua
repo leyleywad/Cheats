@@ -327,7 +327,7 @@ task.spawn(function()
         if #Players:GetPlayers()>1 and (aFS=="Safe" or aBS=="Safe" or aSS=="Safe") then
             sMP=true; 
             -- FIXED: Teleports to Y: 93 instead of 103 so the player is strictly 10 studs lower, avoiding the drop animation.
-            if not SolaraManager.HasSafetyRespawned and c and hrp then c:PivotTo(CFrame.new(0,93,0)); hrp.Velocity=Vector3.zero; hrp.RotVelocity=Vector3.zero; SolaraManager.HasSafetyRespawned=true end
+            if not SolaraManager.HasSafetyRespawned and c and hrp then c:PivotTo(CFrame.new(0,03,0)); hrp.Velocity=Vector3.zero; hrp.RotVelocity=Vector3.zero; SolaraManager.HasSafetyRespawned=true end
             local txt="Status: PAUSED (Player in server)"
             if aFS=="Safe" and SolaraManager.UI.FarmStatusLbl then SolaraManager.UI.FarmStatusLbl.Text=txt end
             if aBS=="Safe" and SolaraManager.UI.TycoonStatusLbl then SolaraManager.UI.TycoonStatusLbl.Text=txt end
