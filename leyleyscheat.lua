@@ -1,12 +1,12 @@
 --[[ 
-    Leyley's Cheat V6.0 - Premium UI Overhaul 
-    Uncompressed, Readable & Beautiful
+    Leyley's Cheat V6.1 - Premium UI Overhaul Fix
+    Complet, aéré, onglets corrigés et scroll Solara
 ]]--
 
-print("Leyley's Cheat V6.0 loaded")
+print("Leyley's Cheat V6.1 loaded")
 
 -------------------------------------------------------------------------------
--- SERVICES & VARIABLES GLOBALES
+-- SERVICES GLOBAUX
 -------------------------------------------------------------------------------
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -18,7 +18,7 @@ local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
 -------------------------------------------------------------------------------
--- CONFIGURATION & THEMES
+-- THEMES ET CONFIGURATION
 -------------------------------------------------------------------------------
 local Themes = {
     Default = { 
@@ -78,23 +78,23 @@ local SolaraManager = {
         Dividers = {}
     },
     
-    -- États du joueur
     IsClicking = false,
     IsAntiAfk = false,
     SpeedOverride = nil,
     JumpOverride = nil,
     SelectedTarget = nil,
     
-    -- États du jeu
     ActiveGameConfig = "SellLemons",
     ActiveBuyState = "Off",
     BuySpeed = 2,
     MyTycoon = nil,
+    
     ActiveFarmState = "Off",
     FarmSpeed = 2,
     FarmCache = {}, 
     SpecialCount = 0,
     LastCacheUpdate = 0,
+    
     HasSafetyRespawned = false,
     ActiveAutoUpgrade = false,
     LastUpgradeCheck = 0,
@@ -102,7 +102,7 @@ local SolaraManager = {
 }
 
 -------------------------------------------------------------------------------
--- LOGIQUE DES PRIX ET SUFFIXES
+-- SYSTÈME DE PRIX ET SUFFIXES
 -------------------------------------------------------------------------------
 local SuffixDict = {}
 
@@ -142,7 +142,6 @@ local function GenerateSuffixes()
     
     SuffixDict["centillion"] = 101
     SuffixDict["centillions"] = 101
-    
     SuffixDict["k"] = 1
     SuffixDict["m"] = 2
     SuffixDict["b"] = 3
@@ -152,10 +151,7 @@ end
 GenerateSuffixes()
 
 local function ParsePrice(str)
-    if not str then 
-        return math.huge 
-    end
-    
+    if not str then return math.huge end
     str = string.lower(tostring(str))
     
     if string.match(str, "free") or string.match(str, "gratuit") then 
@@ -163,21 +159,15 @@ local function ParsePrice(str)
     end
     
     local sciNum = tonumber(str)
-    if sciNum then 
-        return sciNum 
-    end
+    if sciNum then return sciNum end
     
     str = string.gsub(str, "[^%d%.%a]", "") 
     local numStr, suffix = string.match(str, "^([%d%.]+)(%a*)$")
     
-    if not numStr then 
-        return math.huge 
-    end
+    if not numStr then return math.huge end
     
     local num = tonumber(numStr)
-    if not num then 
-        return math.huge 
-    end
+    if not num then return math.huge end
     
     if suffix and suffix ~= "" then
         local powerIndex = SuffixDict[suffix]
@@ -208,21 +198,9 @@ local function ApplyTween(obj, properties, duration)
 end
 
 local function TrackTheme(object, themeCategory)
-    if not themeCategory then return end
-    table.insert(SolaraManager.ThemeObjects[themeCategory], object)
-end
-
-local function CreateFrame(parent, name, size, pos, bgColor, themeGroup)
-    local frame = Instance.new("Frame")
-    frame.Name = name
-    frame.Size = size
-    frame.Position = pos
-    frame.BackgroundColor3 = bgColor or SolaraManager.CurrentTheme.MainBg
-    frame.BorderSizePixel = 0
-    frame.Parent = parent
-    
-    TrackTheme(frame, themeGroup)
-    return frame
+    if themeCategory then 
+        table.insert(SolaraManager.ThemeObjects[themeCategory], object) 
+    end
 end
 
 local function CreateUICorner(parent, radius)
@@ -238,9 +216,20 @@ local function CreateUIStroke(parent, color, thickness)
     stroke.Thickness = thickness or 1
     stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     stroke.Parent = parent
-    
     TrackTheme(stroke, "Strokes")
     return stroke
+end
+
+local function CreateFrame(parent, name, size, pos, bgColor, themeGroup)
+    local frame = Instance.new("Frame")
+    frame.Name = name
+    frame.Size = size
+    frame.Position = pos
+    frame.BackgroundColor3 = bgColor or SolaraManager.CurrentTheme.MainBg
+    frame.BorderSizePixel = 0
+    frame.Parent = parent
+    TrackTheme(frame, themeGroup)
+    return frame
 end
 
 local function CreateLabel(parent, name, text, size, pos, alignment)
@@ -256,7 +245,6 @@ local function CreateLabel(parent, name, text, size, pos, alignment)
     label.TextWrapped = true
     label.Text = text
     label.Parent = parent
-    
     TrackTheme(label, "Texts")
     return label
 end
@@ -326,14 +314,6 @@ local function EnableDragging(frame, dragHandle)
     local dragStart
     local startPos
     
-    local function update(input)
-        local delta = input.Position - dragStart
-        frame.Position = UDim2.new(
-            startPos.X.Scale, startPos.X.Offset + delta.X,
-            startPos.Y.Scale, startPos.Y.Offset + delta.Y
-        )
-    end
-    
     dragHandle.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
@@ -356,13 +336,17 @@ local function EnableDragging(frame, dragHandle)
     
     UserInputService.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
-            update(input)
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
         end
     end)
 end
 
 -------------------------------------------------------------------------------
--- CONSTRUCTION DE L'INTERFACE PRINCIPALE
+-- CRÉATION DE L'INTERFACE PRINCIPALE
 -------------------------------------------------------------------------------
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = SolaraManager.GuiName
@@ -373,7 +357,6 @@ ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 local guiParent = pcall(function() return CoreGui.Name end) and CoreGui or LocalPlayer:WaitForChild("PlayerGui")
 ScreenGui.Parent = guiParent
 
--- Bouton de restauration (quand minimisé)
 local RestoreBtn = CreateButton(
     ScreenGui, "RestoreBtn", "➕ Open", 
     UDim2.new(0, 80, 0, 40), 
@@ -384,7 +367,6 @@ local RestoreBtn = CreateButton(
 RestoreBtn.Visible = false
 RestoreBtn.ZIndex = 10
 
--- Frame Principale (Taille fixe pour éviter les coupures)
 local MainFrame = CreateFrame(
     ScreenGui, "MainFrame", 
     UDim2.new(0, 650, 0, 420), 
@@ -396,7 +378,6 @@ MainFrame.ClipsDescendants = true
 CreateUICorner(MainFrame, 8)
 CreateUIStroke(MainFrame, SolaraManager.CurrentTheme.Accent, 2)
 
--- Barre de titre
 local TitleBar = CreateFrame(
     MainFrame, "TitleBar", 
     UDim2.new(1, 0, 0, 40), 
@@ -438,35 +419,42 @@ RestoreBtn.MouseButton1Click:Connect(function()
     ApplyTween(MainFrame, {Size = UDim2.new(0, 650, 0, 420)}, 0.4)
 end)
 
--- Sidebar (Menu de navigation à gauche)
-local Sidebar = CreateFrame(
-    MainFrame, "Sidebar", 
+-- LE CORRECTIF DU SIDEBAR EST ICI : On sépare les boutons de la ligne verticale
+local SidebarContainer = CreateFrame(
+    MainFrame, "SidebarContainer", 
     UDim2.new(0, 150, 1, -40), 
     UDim2.new(0, 0, 0, 40), 
     SolaraManager.CurrentTheme.PanelBg, 
     "Panels"
 )
+
 local SidebarLine = CreateFrame(
-    Sidebar, "SidebarLine", 
+    SidebarContainer, "SidebarLine", 
     UDim2.new(0, 1, 1, 0), 
     UDim2.new(1, -1, 0, 0), 
     SolaraManager.CurrentTheme.Stroke, 
     "Dividers"
 )
 
+local SidebarButtonsFrame = Instance.new("Frame")
+SidebarButtonsFrame.Name = "SidebarButtons"
+SidebarButtonsFrame.Size = UDim2.new(1, -1, 1, 0)
+SidebarButtonsFrame.Position = UDim2.new(0, 0, 0, 0)
+SidebarButtonsFrame.BackgroundTransparency = 1
+SidebarButtonsFrame.Parent = SidebarContainer
+
 local SidebarLayout = Instance.new("UIListLayout")
-SidebarLayout.Parent = Sidebar
+SidebarLayout.Parent = SidebarButtonsFrame
 SidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
 SidebarLayout.Padding = UDim.new(0, 5)
 
 local SidebarPadding = Instance.new("UIPadding")
-SidebarPadding.Parent = Sidebar
+SidebarPadding.Parent = SidebarButtonsFrame
 SidebarPadding.PaddingTop = UDim.new(0, 10)
 SidebarPadding.PaddingBottom = UDim.new(0, 10)
 SidebarPadding.PaddingLeft = UDim.new(0, 10)
 SidebarPadding.PaddingRight = UDim.new(0, 10)
 
--- Zone de contenu (à droite)
 local ContentArea = CreateFrame(
     MainFrame, "ContentArea", 
     UDim2.new(1, -150, 1, -40), 
@@ -474,6 +462,7 @@ local ContentArea = CreateFrame(
     SolaraManager.CurrentTheme.MainBg, 
     "Backgrounds"
 )
+
 local ContentPadding = Instance.new("UIPadding")
 ContentPadding.Parent = ContentArea
 ContentPadding.PaddingTop = UDim.new(0, 15)
@@ -482,7 +471,7 @@ ContentPadding.PaddingLeft = UDim.new(0, 15)
 ContentPadding.PaddingRight = UDim.new(0, 15)
 
 -------------------------------------------------------------------------------
--- SYSTÈME D'ONGLETS (TABS)
+-- SYSTÈME D'ONGLETS
 -------------------------------------------------------------------------------
 local TabButtons = {}
 local Pages = {}
@@ -504,7 +493,7 @@ local function SwitchTab(tabName)
 end
 
 local function BuildPage(name, icon, order)
-    local btn = CreateButton(Sidebar, name.."Tab", icon .. " " .. name, UDim2.new(1, 0, 0, 35), UDim2.new(), nil, "Panels")
+    local btn = CreateButton(SidebarButtonsFrame, name.."Tab", icon .. " " .. name, UDim2.new(1, 0, 0, 35), UDim2.new(), nil, "Panels")
     btn.LayoutOrder = order
     btn.TextXAlignment = Enum.TextXAlignment.Left
     
@@ -546,6 +535,7 @@ CreateLabel(PlayerPage, "PlayerTitle", "PLAYER MODIFIERS", UDim2.new(1, 0, 0, 25
 local ClickRow = CreateFrame(PlayerPage, "ClickRow", UDim2.new(1, 0, 0, 45), UDim2.new(), nil, "Backgrounds")
 ClickRow.BackgroundTransparency = 1
 ClickRow.LayoutOrder = 2
+
 local ClickToggle = CreateButton(ClickRow, "ClickToggle", "Auto Clicker: OFF", UDim2.new(0.48, 0, 1, 0), UDim2.new(0, 0, 0, 0), SolaraManager.CurrentTheme.Danger)
 local AfkToggle = CreateButton(ClickRow, "AfkToggle", "Anti-AFK: OFF", UDim2.new(0.48, 0, 1, 0), UDim2.new(0.52, 0, 0, 0), SolaraManager.CurrentTheme.Danger)
 
@@ -566,6 +556,7 @@ CreateLabel(PlayerPage, "StatsTitle", "STAT OVERRIDES", UDim2.new(1, 0, 0, 25), 
 local SpeedRow = CreateFrame(PlayerPage, "SpeedRow", UDim2.new(1, 0, 0, 40), UDim2.new(), nil, "Backgrounds")
 SpeedRow.BackgroundTransparency = 1
 SpeedRow.LayoutOrder = 4
+
 local SpeedInput = CreateInput(SpeedRow, "SpeedInput", "WalkSpeed (e.g. 50)", UDim2.new(0.65, 0, 1, 0), UDim2.new(0, 0, 0, 0))
 local SpeedBtn = CreateButton(SpeedRow, "SpeedBtn", "Apply", UDim2.new(0.3, 0, 1, 0), UDim2.new(0.7, 0, 0, 0), SolaraManager.CurrentTheme.Accent)
 
@@ -583,6 +574,7 @@ end)
 local JumpRow = CreateFrame(PlayerPage, "JumpRow", UDim2.new(1, 0, 0, 40), UDim2.new(), nil, "Backgrounds")
 JumpRow.BackgroundTransparency = 1
 JumpRow.LayoutOrder = 5
+
 local JumpInput = CreateInput(JumpRow, "JumpInput", "JumpPower (e.g. 100)", UDim2.new(0.65, 0, 1, 0), UDim2.new(0, 0, 0, 0))
 local JumpBtn = CreateButton(JumpRow, "JumpBtn", "Apply", UDim2.new(0.3, 0, 1, 0), UDim2.new(0.7, 0, 0, 0), SolaraManager.CurrentTheme.Accent)
 
@@ -633,9 +625,7 @@ PListLayout.Padding = UDim.new(0, 5)
 
 local function UpdatePlayers()
     for _, c in ipairs(PList:GetChildren()) do 
-        if c:IsA("TextButton") then 
-            c:Destroy() 
-        end 
+        if c:IsA("TextButton") then c:Destroy() end 
     end
     
     local players = Players:GetPlayers()
@@ -709,7 +699,6 @@ local function UpdateTheme(themeName)
     if not newTheme then return end
     SolaraManager.CurrentTheme = newTheme
     
-    -- Mise à jour globale et sécurisée
     for _, bg in ipairs(SolaraManager.ThemeObjects.Backgrounds) do 
         if bg and bg.Parent then ApplyTween(bg, {BackgroundColor3 = newTheme.MainBg}, 0.5) end
     end
@@ -729,7 +718,6 @@ local function UpdateTheme(themeName)
         if txt and txt.Parent then ApplyTween(txt, {TextColor3 = newTheme.Text}, 0.5) end
     end
     
-    -- Met à jour le bouton d'onglet actif
     for tabName, btn in pairs(TabButtons) do
         if tabName == SolaraManager.ActiveTab then
             ApplyTween(btn, {BackgroundColor3 = newTheme.Accent}, 0.5)
@@ -738,7 +726,6 @@ local function UpdateTheme(themeName)
         end
     end
     
-    -- Reforcer la couleur des bordures principales
     local mainFrameStroke = MainFrame:FindFirstChildOfClass("UIStroke")
     if mainFrameStroke then
         ApplyTween(mainFrameStroke, {Color = newTheme.Accent}, 0.5)
@@ -761,7 +748,6 @@ end
 -------------------------------------------------------------------------------
 local GamePage = BuildPage("Game", "🎮", 5)
 
--- Architecture Interne du Game Page
 local GameContainer = Instance.new("Frame")
 GameContainer.Size = UDim2.new(1, 0, 1, 0)
 GameContainer.BackgroundTransparency = 1
@@ -772,7 +758,6 @@ GameTabsLayout.Parent = GameContainer
 GameTabsLayout.FillDirection = Enum.FillDirection.Horizontal
 GameTabsLayout.Padding = UDim.new(0, 10)
 
--- Menu de sélection des jeux
 local GameSelector = CreateFrame(GameContainer, "GameSelector", UDim2.new(0.35, 0, 0, 300), UDim2.new(), SolaraManager.CurrentTheme.PanelBg, "Panels")
 CreateUICorner(GameSelector, 6)
 CreateUIStroke(GameSelector, SolaraManager.CurrentTheme.Stroke, 1)
@@ -781,13 +766,11 @@ local SelectorLayout = Instance.new("UIListLayout")
 SelectorLayout.Parent = GameSelector
 SelectorLayout.Padding = UDim.new(0, 5)
 
--- Fenêtre d'options du jeu sélectionné
 local GameContent = Instance.new("Frame")
 GameContent.Size = UDim2.new(0.65, -10, 0, 300)
 GameContent.BackgroundTransparency = 1
 GameContent.Parent = GameContainer
 
--- Config : Sell Lemons
 local SellLemonsScroll = Instance.new("ScrollingFrame")
 SellLemonsScroll.Size = UDim2.new(1, 0, 1, 0)
 SellLemonsScroll.BackgroundTransparency = 1
@@ -799,7 +782,6 @@ local LemonsLayout = Instance.new("UIListLayout")
 LemonsLayout.Parent = SellLemonsScroll
 LemonsLayout.Padding = UDim.new(0, 8)
 
--- Sections Lemon Farm
 CreateLabel(SellLemonsScroll, "FarmTitle", "🍋 AUTO FARM", UDim2.new(1, 0, 0, 25), UDim2.new(), Enum.TextXAlignment.Left).LayoutOrder = 1
 local FarmStatusLbl = CreateLabel(SellLemonsScroll, "FarmStatus", "Status: Idle", UDim2.new(1, 0, 0, 15), UDim2.new(), Enum.TextXAlignment.Left)
 FarmStatusLbl.TextSize = 12
@@ -823,11 +805,9 @@ FarmActionRow.Parent = SellLemonsScroll
 local FarmBtn = CreateButton(FarmActionRow, "FarmBtn", "Normal Farm", UDim2.new(0.48, 0, 1, 0), UDim2.new(), SolaraManager.CurrentTheme.Danger)
 local SafeFarmBtn = CreateButton(FarmActionRow, "SafeFarmBtn", "Safe Farm", UDim2.new(0.48, 0, 1, 0), UDim2.new(0.52, 0, 0, 0), SolaraManager.CurrentTheme.Danger)
 
--- Ligne de séparation
 local div1 = CreateFrame(SellLemonsScroll, "Div1", UDim2.new(1, 0, 0, 2), UDim2.new(), SolaraManager.CurrentTheme.Stroke, "Dividers")
 div1.LayoutOrder = 5
 
--- Sections Tycoon Buy
 CreateLabel(SellLemonsScroll, "TycoonTitle", "🏭 TYCOON BUY", UDim2.new(1, 0, 0, 25), UDim2.new(), Enum.TextXAlignment.Left).LayoutOrder = 6
 local TycoonStatusLbl = CreateLabel(SellLemonsScroll, "TycoonStatus", "Status: Idle", UDim2.new(1, 0, 0, 15), UDim2.new(), Enum.TextXAlignment.Left)
 TycoonStatusLbl.TextSize = 12
@@ -851,11 +831,9 @@ BuyActionRow.Parent = SellLemonsScroll
 local AutoBuyBtn = CreateButton(BuyActionRow, "AutoBuyBtn", "Auto Buy", UDim2.new(0.48, 0, 1, 0), UDim2.new(), SolaraManager.CurrentTheme.Danger)
 local SafeBuyBtn = CreateButton(BuyActionRow, "SafeBuyBtn", "Safe Buy", UDim2.new(0.48, 0, 1, 0), UDim2.new(0.52, 0, 0, 0), SolaraManager.CurrentTheme.Danger)
 
--- Ligne de séparation
 local div2 = CreateFrame(SellLemonsScroll, "Div2", UDim2.new(1, 0, 0, 2), UDim2.new(), SolaraManager.CurrentTheme.Stroke, "Dividers")
 div2.LayoutOrder = 10
 
--- Sections Auto Upgrade
 CreateLabel(SellLemonsScroll, "UpgradeTitle", "📈 AUTO UPGRADE", UDim2.new(1, 0, 0, 25), UDim2.new(), Enum.TextXAlignment.Left).LayoutOrder = 11
 local CashStatusLbl = CreateLabel(SellLemonsScroll, "CashStatus", "Cash: $0", UDim2.new(1, 0, 0, 15), UDim2.new(), Enum.TextXAlignment.Left)
 CashStatusLbl.TextSize = 12
@@ -865,7 +843,6 @@ CashStatusLbl.LayoutOrder = 12
 local AutoUpgradeBtn = CreateButton(SellLemonsScroll, "AutoUpgradeBtn", "Auto Upgrade: OFF", UDim2.new(1, 0, 0, 40), UDim2.new(), SolaraManager.CurrentTheme.Danger)
 AutoUpgradeBtn.LayoutOrder = 13
 
--- Logique des boutons de la section Game
 local function UpdateGameUI()
     FarmBtn.BackgroundColor3 = (SolaraManager.ActiveFarmState == "Normal") and SolaraManager.CurrentTheme.Success or SolaraManager.CurrentTheme.Danger
     SafeFarmBtn.BackgroundColor3 = (SolaraManager.ActiveFarmState == "Safe") and SolaraManager.CurrentTheme.Success or SolaraManager.CurrentTheme.Danger
@@ -934,12 +911,12 @@ local Game1Btn = CreateButton(GameSelector, "Game1Btn", "Sell Lemons", UDim2.new
 local Game2Btn = CreateButton(GameSelector, "Game2Btn", "Coming Soon", UDim2.new(1, -10, 0, 35), UDim2.new(0, 5, 0, 45), nil, "Panels")
 
 -------------------------------------------------------------------------------
--- INITIALISATION ET AFFICHAGE
+-- INITIALISATION
 -------------------------------------------------------------------------------
 SwitchTab("Player")
 
 -------------------------------------------------------------------------------
--- BOUCLE PRINCIPALE (RUNSERVICE / TASK.SPAWN)
+-- BOUCLE PRINCIPALE (RUNSERVICE)
 -------------------------------------------------------------------------------
 task.spawn(function()
     while ScreenGui.Parent do
@@ -947,7 +924,6 @@ task.spawn(function()
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
         local hum = char and char:FindFirstChild("Humanoid")
         
-        -- Override Stats
         if hum then
             if SolaraManager.SpeedOverride then hum.WalkSpeed = SolaraManager.SpeedOverride end
             if SolaraManager.JumpOverride then 
@@ -956,7 +932,6 @@ task.spawn(function()
             end
         end
         
-        -- Auto Clicker
         if SolaraManager.IsClicking then
             pcall(function() 
                 local tool = char and char:FindFirstChildOfClass("Tool")
@@ -964,7 +939,6 @@ task.spawn(function()
             end)
         end
         
-        -- Mise à jour du cash
         local currentCashNum = 0
         pcall(function()
             local cashLbl = LocalPlayer.PlayerGui:FindFirstChild("HUD").Balance.Main.Cash
@@ -976,7 +950,6 @@ task.spawn(function()
             end
         end)
         
-        -- LOGIQUE: Auto Upgrade (Scroll et Compatibilité Solara fixés)
         if SolaraManager.ActiveAutoUpgrade then
             local manageMenuVisible = false
             pcall(function()
@@ -1010,7 +983,6 @@ task.spawn(function()
                                         end
                                         
                                         if currentCashNum > 0 and currentCashNum >= priceNum then
-                                            -- Correction du Scroll (Centrage automatique)
                                             if manageFrame:IsA("ScrollingFrame") then
                                                 local scrollTarget = child.AbsolutePosition.Y - manageFrame.AbsolutePosition.Y + manageFrame.CanvasPosition.Y - (manageFrame.AbsoluteSize.Y / 2) + (child.AbsoluteSize.Y / 2)
                                                 manageFrame.CanvasPosition = Vector2.new(0, scrollTarget)
@@ -1018,7 +990,6 @@ task.spawn(function()
                                             
                                             task.wait(0.1)
                                             
-                                            -- Clic avec Solara VirtualInput
                                             local absPos = upgradeBtn.AbsolutePosition
                                             local absSize = upgradeBtn.AbsoluteSize
                                             
@@ -1042,7 +1013,6 @@ task.spawn(function()
             end
         end
         
-        -- Logique Safe Mode (Anti-Player)
         local otherPlayersPresent = #Players:GetPlayers() > 1
         local safeModePaused = false
         
@@ -1066,7 +1036,6 @@ task.spawn(function()
         end
         
         if not safeModePaused then
-            -- LOGIQUE: Tycoon Buy
             if SolaraManager.ActiveBuyState ~= "Off" and char and hrp then
                 pcall(function()
                     if not SolaraManager.MyTycoon then
@@ -1154,7 +1123,6 @@ task.spawn(function()
                 end)
             end
             
-            -- LOGIQUE: Auto Farm (Lemons)
             if SolaraManager.ActiveFarmState ~= "Off" and char and hrp then
                 if tick() - SolaraManager.LastCacheUpdate >= 10 then
                     SolaraManager.FarmCache = {}
@@ -1220,7 +1188,6 @@ task.spawn(function()
     end
 end)
 
--- Anti AFK
 LocalPlayer.Idled:Connect(function() 
     if SolaraManager.IsAntiAfk and ScreenGui.Parent then 
         VirtualUser:CaptureController()
