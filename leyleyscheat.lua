@@ -1,11 +1,10 @@
 --[[ 
-    Leyley's Premium Cheat V6.9 - THE COMPLETONIST UPDATE
-    - Added: ALL 14 Themes restored (Color & Game categories)
-    - Added: ALL Suffixes restored (from Thousand up to Centillion, exactly 100 tiers)
-    - Architecture: Minified databases to bypass script size limits
+    Leyley's Premium Cheat V6.10 - THE PERFECT TYCOON FIX
+    - Fix: Tycoon Auto-Buy now strictly scans inside "Multiplier", "Multipliers", "Structure", and "Other" folders.
+    - Info: All themes, 100+ suffixes, and full config saving are present.
 ]]--
 
-print("Leyley's Premium Cheat V6.9 loaded")
+print("Leyley's Premium Cheat V6.10 loaded")
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -18,7 +17,7 @@ local HttpService = game:GetService("HttpService")
 
 local LocalPlayer = Players.LocalPlayer
 
--- [ 1. THEMES DATABASE (One-liners for compression) ]
+-- [ 1. THEMES DATABASE ]
 local Themes = {
     Default = { MainBg = Color3.fromRGB(20,20,25), PanelBg = Color3.fromRGB(30,30,38), Text = Color3.fromRGB(240,240,240), Accent = Color3.fromRGB(90,130,255), Success = Color3.fromRGB(60,180,90), Danger = Color3.fromRGB(220,70,70), Warning = Color3.fromRGB(220,160,50), Stroke = Color3.fromRGB(60,60,75), Group = "Color" },
     Dracula = { MainBg = Color3.fromRGB(40,42,54), PanelBg = Color3.fromRGB(68,71,90), Text = Color3.fromRGB(248,248,242), Accent = Color3.fromRGB(255,121,198), Success = Color3.fromRGB(80,250,123), Danger = Color3.fromRGB(255,85,85), Warning = Color3.fromRGB(241,250,140), Stroke = Color3.fromRGB(98,114,164), Group = "Color" },
@@ -69,7 +68,7 @@ end
 
 -- [ 3. STATE MANAGER ]
 local SolaraManager = {
-    GuiName = "LeyleysCheat_V6_9", CurrentThemeName = "Default", CurrentTheme = Themes.Default, ActiveTab = "Player",
+    GuiName = "LeyleysCheat_V6_10", CurrentThemeName = "Default", CurrentTheme = Themes.Default, ActiveTab = "Player",
     ThemeObjects = { Backgrounds={}, Panels={}, Accents={}, Strokes={}, Texts={}, Dividers={} },
     UI = { TabButtons={}, Pages={}, PlaylistInputs={}, Toggles={}, Inputs={}, Texts={} },
     IsClicking=false, IsAntiAfk=false, IsNoclip=false, IsESP=false, SpeedOverride=nil, JumpOverride=nil, SelectedTarget=nil,
@@ -143,7 +142,7 @@ local SG = Instance.new("ScreenGui"); SG.Name=SolaraManager.GuiName; SG.ResetOnS
 local ResB = Button(SG, "ResB", "➕ Open", UDim2.new(0,80,0,40), UDim2.new(0,20,1,-60), SolaraManager.CurrentTheme.Accent, "Accents"); ResB.Visible=false; ResB.ZIndex=10
 local Main = Frame(SG, "Main", UDim2.new(0,800,0,480), UDim2.new(0.5,-400,0.5,-240)); Main.ClipsDescendants=true; UICorner(Main,8); SolaraManager.UI.MainFrameStroke = UIStroke(Main, SolaraManager.CurrentTheme.Accent, 2)
 local TBar = Frame(Main, "TBar", UDim2.new(1,0,0,40), UDim2.new(), SolaraManager.CurrentTheme.PanelBg, "Panels"); Drag(Main, TBar)
-local TLbl = Label(TBar, "TLbl", "  ✨ Leyley's Premium Cheat V6.9", UDim2.new(1,-100,1,0), UDim2.new(), Enum.TextXAlignment.Left); TLbl.Font=Enum.Font.GothamBold
+local TLbl = Label(TBar, "TLbl", "  ✨ Leyley's Premium Cheat V6.10", UDim2.new(1,-100,1,0), UDim2.new(), Enum.TextXAlignment.Left); TLbl.Font=Enum.Font.GothamBold
 local ClsB = Button(TBar, "ClsB", "X", UDim2.new(0,30,0,30), UDim2.new(1,-35,0,5), SolaraManager.CurrentTheme.Danger, nil)
 local MinB = Button(TBar, "MinB", "-", UDim2.new(0,30,0,30), UDim2.new(1,-70,0,5), SolaraManager.CurrentTheme.Warning, nil)
 
@@ -326,7 +325,28 @@ task.spawn(function()
                     if not SolaraManager.MyTycoon then for _,fol in ipairs(workspace:GetChildren()) do local oV=fol:FindFirstChild("Owner"); if oV and string.lower(oV:IsA("ObjectValue") and oV.Value and oV.Value.Name or oV:IsA("StringValue") and oV.Value or "")==string.lower(LocalPlayer.Name) then SolaraManager.MyTycoon=fol; break end end end
                     if SolaraManager.MyTycoon then
                         local bL={}; local function sB(m) if m and m:FindFirstChild("Button") and m.Button:IsA("BasePart") then local g=m.Button:FindFirstChild("Gui") or m:FindFirstChild("Gui"); if g and g:FindFirstChild("Price") then local p=ParsePrice((g.Price:IsA("ValueBase") and tostring(g.Price.Value) or g.Price.Text)..(g:FindFirstChild("PriceMag") and (g.PriceMag:IsA("ValueBase") and tostring(g.PriceMag.Value) or g.PriceMag.Text) or "")); if p>=0 and p~=math.huge then table.insert(bL, {Part=m.Button, Price=p, Raw=g.Price.Text}) end end end end
-                        if SolaraManager.MyTycoon:FindFirstChild("Purchases") then for _,sf in ipairs(SolaraManager.MyTycoon.Purchases:GetChildren()) do if sf:FindFirstChild("Buttons") then for _,cfol in ipairs(sf.Buttons:GetChildren()) do sB(cfol) end end if sf.Name=="Hills" then for _,d in ipairs(sf:GetDescendants()) do if d:IsA("Model") and d:FindFirstChild("Button") then sB(d) end end end end end
+                        
+                        -- FIX: Strict category folder scanning restored
+                        if SolaraManager.MyTycoon:FindFirstChild("Purchases") then 
+                            local cats = {Structure=true, Other=true, Multiplier=true, Multipliers=true}
+                            for _,sf in ipairs(SolaraManager.MyTycoon.Purchases:GetChildren()) do 
+                                if sf:FindFirstChild("Buttons") then 
+                                    for _,cfol in ipairs(sf.Buttons:GetChildren()) do 
+                                        if cats[cfol.Name] then 
+                                            for _,b in ipairs(cfol:GetChildren()) do sB(b) end 
+                                        elseif cfol:IsA("Model") then 
+                                            sB(cfol) 
+                                        end 
+                                    end 
+                                end 
+                                if sf.Name=="Hills" then 
+                                    for _,d in ipairs(sf:GetDescendants()) do 
+                                        if d:IsA("Model") and d:FindFirstChild("Button") then sB(d) end 
+                                    end 
+                                end 
+                            end 
+                        end
+                        
                         if #bL>0 then table.sort(bL, function(a,b) return a.Price<b.Price end); local cb=bL[1]; if SolaraManager.UI.TycoonStatusLbl then SolaraManager.UI.TycoonStatusLbl.Text="Status: Buying ("..cb.Raw..")" end; c:PivotTo(cb.Part.CFrame*CFrame.new(0,1,0)); hrp.Velocity=Vector3.zero; hrp.RotVelocity=Vector3.zero; task.wait(1/SolaraManager.BuySpeed) else if SolaraManager.UI.TycoonStatusLbl then SolaraManager.UI.TycoonStatusLbl.Text="Status: No buttons found." end; task.wait(1) end
                     end
                 end)
