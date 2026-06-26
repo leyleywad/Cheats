@@ -1,12 +1,11 @@
 --[[ 
-    Leyley's Premium Cheat V6.18 - THE MEDIA UPDATE
-    - Added: Root folder "Leyley's cheat" and subfolder "music" creation on inject.
-    - Updated: Config file is now saved inside "Leyley's cheat/LeyleysCheat_Config.json".
-    - Added: "Scan Files" button in the Music tab to automatically import .mp3 files from the "music" folder.
-    - Info: Smart Hybrid, all themes, 100+ suffixes, and full ESP intact.
+    Leyley's Premium Cheat V6.19 - THE ECONOMY FIX
+    - Fixed: Auto Buy trying to buy insanely expensive items because of unrecognized suffix variants (e.g. "tres" instead of "tre").
+    - Added: All Latin variants (tres, quinqua, ses, septem, noven) added to the suffix database.
+    - Security: If an item's price cannot be parsed, the script will safely ignore it rather than assuming it's cheap.
 ]]--
 
-print("Leyley's Premium Cheat V6.18 loaded")
+print("Leyley's Premium Cheat V6.19 loaded")
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -49,26 +48,36 @@ local RevSuffix = {}
 local function GenSuffixes()
     local ord = {"thousand","million","billion","trillion","quadrillion","quintillion","sextillion","septillion","octillion","nonillion"}
     local tens = {decillion=11,vigintillion=21,trigintillion=31,quadragintillion=41,quinquagintillion=51,sexagintillion=61,septuagintillion=71,octogintillion=81,nonagintillion=91}
-    local units = {un=1,duo=2,tre=3,quattuor=4,quin=5,sex=6,septen=7,octo=8,novem=9}
+    local units = {un=1,duo=2,tre=3,tres=3,quattuor=4,quin=5,quinqua=5,sex=6,ses=6,septen=7,septem=7,octo=8,novem=9,noven=9}
     for i,v in ipairs(ord) do SuffixDict[v]=i; SuffixDict[v.."s"]=i; RevSuffix[i] = v:gsub("^%l", string.upper) end
     for tn,tv in pairs(tens) do 
         SuffixDict[tn]=tv; SuffixDict[tn.."s"]=tv; RevSuffix[tv] = tn:gsub("^%l", string.upper)
-        for un,uv in pairs(units) do SuffixDict[un..tn]=tv+uv; SuffixDict[un..tn.."s"]=tv+uv; RevSuffix[tv+uv] = (un..tn):gsub("^%l", string.upper) end 
+        for un,uv in pairs(units) do 
+            SuffixDict[un..tn]=tv+uv; SuffixDict[un..tn.."s"]=tv+uv
+            if not RevSuffix[tv+uv] then RevSuffix[tv+uv] = (un..tn):gsub("^%l", string.upper) end 
+        end 
     end
     RevSuffix[101] = "Centillion"
 end
 GenSuffixes()
 
 local function ParsePrice(str)
-    if not str then return math.huge end; local low = string.lower(tostring(str))
+    if not str then return nil end; local low = string.lower(tostring(str))
     if low:match("free") or low:match("gratuit") then return 0 end
     local numStr, suf = low:gsub("[^%d%.%a]",""):match("^([%d%.]+)(%a*)$")
-    if not numStr then return math.huge end; local num = tonumber(numStr)
-    if suf and suf~="" and SuffixDict[suf] then num = num * (10 ^ (SuffixDict[suf] * 3)) end
-    return num or math.huge
+    if not numStr then return nil end; local num = tonumber(numStr)
+    if not num then return nil end
+    if suf and suf~="" then 
+        if SuffixDict[suf] then 
+            num = num * (10 ^ (SuffixDict[suf] * 3)) 
+        else 
+            return nil -- SAFEFALL: If suffix is unknown, we drop the item completely
+        end 
+    end
+    return num
 end
 
-local function FormatNumber(num) return (type(num)~="number" or num==math.huge) and "0" or (num < 1000 and tostring(math.floor(num)) or string.format("%.2e", num)) end
+local function FormatNumber(num) return (type(num)~="number") and "0" or (num < 1000 and tostring(math.floor(num)) or string.format("%.2e", num)) end
 
 local function ToSuffixString(num)
     if not num or num ~= num or num == math.huge then return "0" end
@@ -82,7 +91,7 @@ end
 
 -- [ 3. STATE MANAGER ]
 local SolaraManager = {
-    GuiName="LeyleysCheat_V6_18", CurrentThemeName="Default", CurrentTheme=Themes.Default, ActiveTab="Player",
+    GuiName="LeyleysCheat_V6_19", CurrentThemeName="Default", CurrentTheme=Themes.Default, ActiveTab="Player",
     ThemeObjects={Backgrounds={},Panels={},Accents={},Strokes={},Texts={},Dividers={}},
     UI={TabButtons={},Pages={},PlaylistInputs={},Toggles={},Inputs={},Texts={},WaypointList=nil,PlaylistList=nil},
     IsAntiAfk=false, IsNoclip=false, IsESP=false, IsFly=false, IsInfJump=false, IsAimbot=false, ClickTP=false, AutoLoadConfig=false,
@@ -175,7 +184,7 @@ UICorner(Main,8); SolaraManager.UI.MainFrameStroke = UIStroke(Main, SolaraManage
 local InnerClip = Instance.new("Frame", Main); InnerClip.Size=UDim2.new(1,0,1,0); InnerClip.BackgroundColor3=SolaraManager.CurrentTheme.MainBg; InnerClip.ClipsDescendants=true; UICorner(InnerClip,8); TrackTheme(InnerClip, "Backgrounds")
 
 local TBar = Frame(InnerClip, "TBar", UDim2.new(1,0,0,40), UDim2.new(), SolaraManager.CurrentTheme.PanelBg, "Panels"); Drag(Main, TBar)
-local TLbl = Label(TBar, "TLbl", "  ✨ Leyley's Premium Cheat V6.18", UDim2.new(1,-100,1,0), UDim2.new(), Enum.TextXAlignment.Left); TLbl.Font=Enum.Font.GothamBold
+local TLbl = Label(TBar, "TLbl", "  ✨ Leyley's Premium Cheat V6.19", UDim2.new(1,-100,1,0), UDim2.new(), Enum.TextXAlignment.Left); TLbl.Font=Enum.Font.GothamBold
 local ClsB = Button(TBar, "ClsB", "X", UDim2.new(0,30,0,30), UDim2.new(1,-35,0,5), SolaraManager.CurrentTheme.Danger, nil)
 local MinB = Button(TBar, "MinB", "-", UDim2.new(0,30,0,30), UDim2.new(1,-70,0,5), SolaraManager.CurrentTheme.Warning, nil)
 
@@ -570,7 +579,7 @@ task.spawn(function()
         
         pcall(function() local cl=LocalPlayer.PlayerGui:FindFirstChild("HUD") and LocalPlayer.PlayerGui.HUD:FindFirstChild("Balance") and LocalPlayer.PlayerGui.HUD.Balance:FindFirstChild("Main") and LocalPlayer.PlayerGui.HUD.Balance.Main:FindFirstChild("Cash")
             if cl and cl:IsA("TextLabel") then
-                local pNum = ParsePrice(cl.Text); if pNum~=math.huge then
+                local pNum = ParsePrice(cl.Text); if pNum then
                     if SolaraManager.UI.CashStatusLbl then SolaraManager.UI.CashStatusLbl.Text=string.format("Cash: $%s (%s)", FormatNumber(pNum), ToSuffixString(pNum)) end
                     if pNum~=SolaraManager.LastCashValue then SolaraManager.LastCashValue=pNum; table.insert(SolaraManager.CashHistory, {time=tick(), cash=pNum}); while #SolaraManager.CashHistory>0 and (tick()-SolaraManager.CashHistory[1].time>15) do table.remove(SolaraManager.CashHistory,1) end end
                     local ch=SolaraManager.CashHistory; if #ch>1 then local dt=ch[#ch].time-ch[1].time; local dc=ch[#ch].cash-ch[1].cash; if dt>0 and dc>=0 and SolaraManager.UI.CashRateLbl then SolaraManager.UI.CashRateLbl.Text=string.format("Rate: $%s/sec (%s)", FormatNumber(dc/dt), ToSuffixString(dc/dt)) end else if SolaraManager.UI.CashRateLbl then SolaraManager.UI.CashRateLbl.Text="Rate: $0/sec" end end
@@ -593,7 +602,7 @@ task.spawn(function()
                 pcall(function()
                     if not SolaraManager.MyTycoon then for _,fol in ipairs(workspace:GetChildren()) do local oV=fol:FindFirstChild("Owner"); if oV and string.lower(oV:IsA("ObjectValue") and oV.Value and oV.Value.Name or oV:IsA("StringValue") and oV.Value or "")==string.lower(LocalPlayer.Name) then SolaraManager.MyTycoon=fol; break end end end
                     if SolaraManager.MyTycoon then
-                        local bL={}; local function sB(m) if m and m:FindFirstChild("Button") and m.Button:IsA("BasePart") then local g=m.Button:FindFirstChild("Gui") or m:FindFirstChild("Gui"); if g and g:FindFirstChild("Price") then local pT=(g.Price:IsA("ValueBase") and tostring(g.Price.Value) or g.Price.Text); local mT=(g:FindFirstChild("PriceMag") and (g.PriceMag:IsA("ValueBase") and tostring(g.PriceMag.Value) or g.PriceMag.Text) or ""); local rT=pT..mT; local p=ParsePrice(rT); if p>=0 and p~=math.huge then table.insert(bL, {Part=m.Button, Price=p, Raw=rT}) end end end end
+                        local bL={}; local function sB(m) if m and m:FindFirstChild("Button") and m.Button:IsA("BasePart") then local g=m.Button:FindFirstChild("Gui") or m:FindFirstChild("Gui"); if g and g:FindFirstChild("Price") then local pT=(g.Price:IsA("ValueBase") and tostring(g.Price.Value) or g.Price.Text); local mT=(g:FindFirstChild("PriceMag") and (g.PriceMag:IsA("ValueBase") and tostring(g.PriceMag.Value) or g.PriceMag.Text) or ""); local rT=pT..mT; local p=ParsePrice(rT); if p and p>=0 then table.insert(bL, {Part=m.Button, Price=p, Raw=rT}) end end end end
                         if SolaraManager.MyTycoon:FindFirstChild("Purchases") then local cats={Structure=true, Other=true, Multiplier=true, Multipliers=true}; for _,sf in ipairs(SolaraManager.MyTycoon.Purchases:GetChildren()) do if sf:FindFirstChild("Buttons") then for _,cfol in ipairs(sf.Buttons:GetChildren()) do if cats[cfol.Name] then for _,b in ipairs(cfol:GetChildren()) do sB(b) end elseif cfol:IsA("Model") then sB(cfol) end end end if sf.Name=="Hills" then for _,d in ipairs(sf:GetDescendants()) do if d:IsA("Model") and d:FindFirstChild("Button") then sB(d) end end end end end
                         if #bL>0 then table.sort(bL, function(a,b) return a.Price<b.Price end); cb=bL[1] end
                     end
