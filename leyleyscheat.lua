@@ -1,14 +1,12 @@
 --[[ 
-    Leyley's Premium Cheat V6.17 - THE POLISH UPDATE
-    - Fixed: Main UI Stroke/Corners are perfectly rounded without clipping.
-    - Updated: Game tab no longer uses a ScrollingFrame.
-    - Updated: ESP Tracers now point to players even when off-screen.
-    - Added: Local Audio File support for custom music (requires executor with getcustomasset).
-    - Updated: Playlists now use a dynamic waypoint-style list.
-    - Updated: Config section moved to the top of Settings with an "Auto-Load Config" toggle.
+    Leyley's Premium Cheat V6.18 - THE MEDIA UPDATE
+    - Added: Root folder "Leyley's cheat" and subfolder "music" creation on inject.
+    - Updated: Config file is now saved inside "Leyley's cheat/LeyleysCheat_Config.json".
+    - Added: "Scan Files" button in the Music tab to automatically import .mp3 files from the "music" folder.
+    - Info: Smart Hybrid, all themes, 100+ suffixes, and full ESP intact.
 ]]--
 
-print("Leyley's Premium Cheat V6.17 loaded")
+print("Leyley's Premium Cheat V6.18 loaded")
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -21,6 +19,12 @@ local HttpService = game:GetService("HttpService")
 
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
+
+-- [ 0. FILE SYSTEM SETUP ]
+if type(makefolder) == "function" and type(isfolder) == "function" then
+    if not isfolder("Leyley's cheat") then makefolder("Leyley's cheat") end
+    if not isfolder("Leyley's cheat/music") then makefolder("Leyley's cheat/music") end
+end
 
 -- [ 1. THEMES DATABASE ]
 local Themes = {
@@ -38,6 +42,7 @@ local Themes = {
     CP2077={MainBg=Color3.fromRGB(250,230,50),PanelBg=Color3.fromRGB(20,20,20),Text=Color3.fromRGB(0,255,255),Accent=Color3.fromRGB(255,0,60),Success=Color3.fromRGB(0,255,150),Danger=Color3.fromRGB(200,0,0),Warning=Color3.fromRGB(255,100,0),Stroke=Color3.fromRGB(20,20,20),Group="Game"}
 }
 
+-- [ 2. SUFFIX GENERATOR ]
 local SuffixDict = {k=1, m=2, b=3, t=4, centillion=101, centillions=101}
 local RevSuffix = {}
 
@@ -77,7 +82,7 @@ end
 
 -- [ 3. STATE MANAGER ]
 local SolaraManager = {
-    GuiName="LeyleysCheat_V6_17", CurrentThemeName="Default", CurrentTheme=Themes.Default, ActiveTab="Player",
+    GuiName="LeyleysCheat_V6_18", CurrentThemeName="Default", CurrentTheme=Themes.Default, ActiveTab="Player",
     ThemeObjects={Backgrounds={},Panels={},Accents={},Strokes={},Texts={},Dividers={}},
     UI={TabButtons={},Pages={},PlaylistInputs={},Toggles={},Inputs={},Texts={},WaypointList=nil,PlaylistList=nil},
     IsAntiAfk=false, IsNoclip=false, IsESP=false, IsFly=false, IsInfJump=false, IsAimbot=false, ClickTP=false, AutoLoadConfig=false,
@@ -87,7 +92,7 @@ local SolaraManager = {
     CustomMusicInstance=nil, CustomMusicName="Unknown", CustomMusicId="", CustomMusicVolume=100,
     Playlists={}, Waypoints={},
     ESP_Dist=true, ESP_Name=true, ESP_Health=true, ESP_Pct=false, ESP_Tracer=false, ESP_LineColor=Color3.new(1,1,1), ESP_OutlineColor=Color3.new(1,1,1),
-    ConfigFilename="LeyleysCheat_Config.json", FlyCtrl={F=0,B=0,L=0,R=0}
+    ConfigFilename="Leyley's cheat/LeyleysCheat_Config.json", FlyCtrl={F=0,B=0,L=0,R=0}
 }
 local ESP_Lines = {}
 
@@ -165,13 +170,12 @@ end
 local SG = Instance.new("ScreenGui"); SG.Name=SolaraManager.GuiName; SG.ResetOnSpawn=false; SG.IgnoreGuiInset=true; SG.ZIndexBehavior=Enum.ZIndexBehavior.Sibling; SG.Parent=pcall(function() return CoreGui.Name end) and CoreGui or LocalPlayer:WaitForChild("PlayerGui")
 local ResB = Button(SG, "ResB", "➕ Open", UDim2.new(0,80,0,40), UDim2.new(0,20,1,-60), SolaraManager.CurrentTheme.Accent, "Accents"); ResB.Parent.Visible=false; ResB.Parent.ZIndex=10
 
--- STRUCTURE FIX: Main transparent frame with Stroke, InnerClip hides corners correctly
 local Main = Frame(SG, "Main", UDim2.new(0,800,0,480), UDim2.new(0.5,-400,0.5,-240)); Main.BackgroundTransparency=1
 UICorner(Main,8); SolaraManager.UI.MainFrameStroke = UIStroke(Main, SolaraManager.CurrentTheme.Accent, 2)
 local InnerClip = Instance.new("Frame", Main); InnerClip.Size=UDim2.new(1,0,1,0); InnerClip.BackgroundColor3=SolaraManager.CurrentTheme.MainBg; InnerClip.ClipsDescendants=true; UICorner(InnerClip,8); TrackTheme(InnerClip, "Backgrounds")
 
 local TBar = Frame(InnerClip, "TBar", UDim2.new(1,0,0,40), UDim2.new(), SolaraManager.CurrentTheme.PanelBg, "Panels"); Drag(Main, TBar)
-local TLbl = Label(TBar, "TLbl", "  ✨ Leyley's Premium Cheat V6.17", UDim2.new(1,-100,1,0), UDim2.new(), Enum.TextXAlignment.Left); TLbl.Font=Enum.Font.GothamBold
+local TLbl = Label(TBar, "TLbl", "  ✨ Leyley's Premium Cheat V6.18", UDim2.new(1,-100,1,0), UDim2.new(), Enum.TextXAlignment.Left); TLbl.Font=Enum.Font.GothamBold
 local ClsB = Button(TBar, "ClsB", "X", UDim2.new(0,30,0,30), UDim2.new(1,-35,0,5), SolaraManager.CurrentTheme.Danger, nil)
 local MinB = Button(TBar, "MinB", "-", UDim2.new(0,30,0,30), UDim2.new(1,-70,0,5), SolaraManager.CurrentTheme.Warning, nil)
 
@@ -320,7 +324,10 @@ do
     SolaraManager.UI.MusicStatusLbl = Label(mScr, "mSL", "Status: No music", UDim2.new(1,0,0,15), UDim2.new(), Enum.TextXAlignment.Left); SolaraManager.UI.MusicStatusLbl.LayoutOrder=4; SolaraManager.UI.MusicStatusLbl.TextColor3=Color3.fromRGB(150,150,150)
     Frame(mScr, "sD", UDim2.new(1,0,0,2), UDim2.new(), SolaraManager.CurrentTheme.Stroke, "Dividers").LayoutOrder=5
     
-    Label(mScr, "pT", "📂 PLAYLIST MANAGER", UDim2.new(1,0,0,15), UDim2.new(), Enum.TextXAlignment.Left).LayoutOrder=6
+    local ptR = Frame(mScr, "ptR", UDim2.new(1,0,0,20), UDim2.new(), nil, "Backgrounds"); ptR.BackgroundTransparency=1; ptR.LayoutOrder=6
+    Label(ptR, "pT", "📂 PLAYLIST MANAGER", UDim2.new(0.6,0,1,0), UDim2.new(), Enum.TextXAlignment.Left)
+    local scanB = Button(ptR, "scanB", "Scan Files", UDim2.new(0.38,0,1,0), UDim2.new(0.62,0,0,0), SolaraManager.CurrentTheme.Accent)
+    
     local pwR = Frame(mScr, "pwR", UDim2.new(1,0,0,30), UDim2.new(), nil, "Backgrounds"); pwR.BackgroundTransparency=1; pwR.LayoutOrder=7
     local piI = Input(pwR, "piI", "ID/Fichier", UDim2.new(0.3,0,1,0), UDim2.new()); local pnI = Input(pwR, "pnI", "Nom", UDim2.new(0.4,0,1,0), UDim2.new(0.32,0,0,0)); local pwB = Button(pwR, "pwB", "Ajouter", UDim2.new(0.26,0,1,0), UDim2.new(0.74,0,0,0), SolaraManager.CurrentTheme.Success)
     
@@ -336,7 +343,7 @@ do
         else
             if getcustomasset and isfile and isfile(idTxt) then
                 assetId = getcustomasset(idTxt)
-                SolaraManager.CustomMusicName = "Local: " .. idTxt
+                SolaraManager.CustomMusicName = "Local: " .. (idTxt:match("([^/\\]+)$") or idTxt)
             else
                 SolaraManager.CustomMusicName = "Invalid Audio/File"
                 return
@@ -354,14 +361,42 @@ do
         for _,c in ipairs(plS:GetChildren()) do if c:IsA("Frame") then c:Destroy() end end
         for i, pl in ipairs(SolaraManager.Playlists) do
             local f = Frame(plS, "pl"..i, UDim2.new(1,0,0,30), UDim2.new(), nil, "Backgrounds"); f.BackgroundTransparency=1
-            local b = Button(f, "plB", pl.Name .. " ("..pl.Id..")", UDim2.new(0.8,0,1,0), UDim2.new(), SolaraManager.CurrentTheme.MainBg, "Backgrounds")
+            local b = Button(f, "plB", pl.Name, UDim2.new(0.8,0,1,0), UDim2.new(), SolaraManager.CurrentTheme.MainBg, "Backgrounds")
             local del = Button(f, "del", "X", UDim2.new(0.18,0,1,0), UDim2.new(0.82,0,0,0), SolaraManager.CurrentTheme.Danger)
             b.MouseButton1Click:Connect(function() mI.Text=pl.Id; PlayCustomAudio(pl.Id) end)
             del.MouseButton1Click:Connect(function() table.remove(SolaraManager.Playlists, i); UpdPL() end)
         end
     end
-    pwB.MouseButton1Click:Connect(function() if piI.Text~="" and pnI.Text~="" then table.insert(SolaraManager.Playlists, {Id=piI.Text, Name=pnI.Text}); piI.Text=""; pnI.Text=""; UpdPL() end end)
     
+    scanB.MouseButton1Click:Connect(function()
+        if listfiles and isfolder and isfolder("Leyley's cheat/music") then
+            local files = listfiles("Leyley's cheat/music")
+            local added = 0
+            for _, file in ipairs(files) do
+                if file:lower():match("%.mp3$") then
+                    local filename = file:match("([^/\\]+)$") or file
+                    local exists = false
+                    for _, pl in ipairs(SolaraManager.Playlists) do
+                        if pl.Id == file then exists = true; break end
+                    end
+                    if not exists then
+                        table.insert(SolaraManager.Playlists, {Id=file, Name=filename})
+                        added = added + 1
+                    end
+                end
+            end
+            UpdPL()
+            scanB.Text = "+"..added.." Files"
+            task.wait(1.5)
+            scanB.Text = "Scan Files"
+        else
+            scanB.Text = "Not Supported"
+            task.wait(1.5)
+            scanB.Text = "Scan Files"
+        end
+    end)
+    
+    pwB.MouseButton1Click:Connect(function() if piI.Text~="" and pnI.Text~="" then table.insert(SolaraManager.Playlists, {Id=piI.Text, Name=pnI.Text}); piI.Text=""; pnI.Text=""; UpdPL() end end)
     pB.MouseButton1Click:Connect(function() if mI.Text~="" then PlayCustomAudio(mI.Text) end end)
     vI.FocusLost:Connect(function() local vN=tonumber(string.match(vI.Text,"%d+")); if vN then SolaraManager.CustomMusicVolume=math.max(0,math.min(100,vN)); vI.Text="Vol: "..SolaraManager.CustomMusicVolume; if SolaraManager.CustomMusicInstance then SolaraManager.CustomMusicInstance.Volume=SolaraManager.CustomMusicVolume/100 end end end)
     psB.MouseButton1Click:Connect(function() local ci=SolaraManager.CustomMusicInstance; if ci then if ci.IsPlaying then ci:Pause(); psB.Text="Resume" else ci:Resume(); psB.Text="Pause" end end end)
