@@ -1,13 +1,14 @@
 --[[ 
-    Leyley's Premium Cheat V6.16 - THE REFINEMENT UPDATE
-    - Fixed: Player tab no longer has a scrollbar.
-    - Fixed: ESP Tracer lines now originate from the center of the screen.
-    - Moved: Advanced ESP Settings moved to the Settings Tab under "Player Settings".
-    - Updated: Economy stats display scientific notation alongside full suffix names (e.g. 1.50e+06 (1.50 Million)).
-    - Updated: "Coming soon..." placed directly under the Sell Lemons button.
+    Leyley's Premium Cheat V6.17 - THE POLISH UPDATE
+    - Fixed: Main UI Stroke/Corners are perfectly rounded without clipping.
+    - Updated: Game tab no longer uses a ScrollingFrame.
+    - Updated: ESP Tracers now point to players even when off-screen.
+    - Added: Local Audio File support for custom music (requires executor with getcustomasset).
+    - Updated: Playlists now use a dynamic waypoint-style list.
+    - Updated: Config section moved to the top of Settings with an "Auto-Load Config" toggle.
 ]]--
 
-print("Leyley's Premium Cheat V6.16 loaded")
+print("Leyley's Premium Cheat V6.17 loaded")
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -37,7 +38,6 @@ local Themes = {
     CP2077={MainBg=Color3.fromRGB(250,230,50),PanelBg=Color3.fromRGB(20,20,20),Text=Color3.fromRGB(0,255,255),Accent=Color3.fromRGB(255,0,60),Success=Color3.fromRGB(0,255,150),Danger=Color3.fromRGB(200,0,0),Warning=Color3.fromRGB(255,100,0),Stroke=Color3.fromRGB(20,20,20),Group="Game"}
 }
 
--- [ 2. SUFFIX GENERATOR (Dynamic up to Centillion) ]
 local SuffixDict = {k=1, m=2, b=3, t=4, centillion=101, centillions=101}
 local RevSuffix = {}
 
@@ -77,15 +77,15 @@ end
 
 -- [ 3. STATE MANAGER ]
 local SolaraManager = {
-    GuiName="LeyleysCheat_V6_16", CurrentThemeName="Default", CurrentTheme=Themes.Default, ActiveTab="Player",
+    GuiName="LeyleysCheat_V6_17", CurrentThemeName="Default", CurrentTheme=Themes.Default, ActiveTab="Player",
     ThemeObjects={Backgrounds={},Panels={},Accents={},Strokes={},Texts={},Dividers={}},
-    UI={TabButtons={},Pages={},PlaylistInputs={},Toggles={},Inputs={},Texts={},WaypointList=nil},
-    IsAntiAfk=false, IsNoclip=false, IsESP=false, IsFly=false, IsInfJump=false, IsAimbot=false, ClickTP=false,
+    UI={TabButtons={},Pages={},PlaylistInputs={},Toggles={},Inputs={},Texts={},WaypointList=nil,PlaylistList=nil},
+    IsAntiAfk=false, IsNoclip=false, IsESP=false, IsFly=false, IsInfJump=false, IsAimbot=false, ClickTP=false, AutoLoadConfig=false,
     SpeedOverride=nil, JumpOverride=nil, SelectedTarget=nil,
     ActiveFarmState="Off", FarmSpeed=2, ActiveBuyState="Off", BuySpeed=2, ActiveSmartState="Off", MyTycoon=nil, FarmCache={}, SpecialCount=0, LastCacheUpdate=0,
     HasSafetyRespawned=false, ClickDelay=0.1, LastCashValue=0, CashHistory={},
     CustomMusicInstance=nil, CustomMusicName="Unknown", CustomMusicId="", CustomMusicVolume=100,
-    Playlists={{Id="",Name=""},{Id="",Name=""},{Id="",Name=""},{Id="",Name=""},{Id="",Name=""}}, Waypoints={},
+    Playlists={}, Waypoints={},
     ESP_Dist=true, ESP_Name=true, ESP_Health=true, ESP_Pct=false, ESP_Tracer=false, ESP_LineColor=Color3.new(1,1,1), ESP_OutlineColor=Color3.new(1,1,1),
     ConfigFilename="LeyleysCheat_Config.json", FlyCtrl={F=0,B=0,L=0,R=0}
 }
@@ -122,6 +122,7 @@ end
 SolaraManager.SyncVisuals = function()
     local d = (SolaraManager.CurrentThemeName == "Default"); local t = SolaraManager.CurrentTheme; local tl = SolaraManager.UI.Toggles; local il = SolaraManager.UI.Inputs
     local function gc(s) return s and (d and t.Success or t.Accent) or (d and t.Danger or t.PanelBg) end
+    if tl.AutoLoad then tl.AutoLoad.BackgroundColor3=gc(SolaraManager.AutoLoadConfig) end
     if tl.Afk then tl.Afk.BackgroundColor3=gc(SolaraManager.IsAntiAfk) end
     if tl.Noclip then tl.Noclip.BackgroundColor3=gc(SolaraManager.IsNoclip) end
     if tl.Esp then tl.Esp.BackgroundColor3=gc(SolaraManager.IsESP) end
@@ -145,7 +146,6 @@ SolaraManager.SyncVisuals = function()
     if il.FarmS then il.FarmS.Text=tostring(SolaraManager.FarmSpeed) end
     if il.BuyS then il.BuyS.Text=tostring(SolaraManager.BuySpeed) end
     if il.Vol then il.Vol.Text="Vol: "..tostring(SolaraManager.CustomMusicVolume) end
-    for idx, ref in ipairs(SolaraManager.UI.PlaylistInputs) do if SolaraManager.Playlists[idx] then ref.IdInput.Text=SolaraManager.Playlists[idx].Id; ref.NameInput.Text=SolaraManager.Playlists[idx].Name end end
 end
 
 SolaraManager.ApplyTheme = function(tn)
@@ -164,9 +164,14 @@ end
 -- [ 6. UI CONSTRUCTION ]
 local SG = Instance.new("ScreenGui"); SG.Name=SolaraManager.GuiName; SG.ResetOnSpawn=false; SG.IgnoreGuiInset=true; SG.ZIndexBehavior=Enum.ZIndexBehavior.Sibling; SG.Parent=pcall(function() return CoreGui.Name end) and CoreGui or LocalPlayer:WaitForChild("PlayerGui")
 local ResB = Button(SG, "ResB", "➕ Open", UDim2.new(0,80,0,40), UDim2.new(0,20,1,-60), SolaraManager.CurrentTheme.Accent, "Accents"); ResB.Parent.Visible=false; ResB.Parent.ZIndex=10
-local Main = Frame(SG, "Main", UDim2.new(0,800,0,480), UDim2.new(0.5,-400,0.5,-240)); Main.ClipsDescendants=true; UICorner(Main,8); SolaraManager.UI.MainFrameStroke = UIStroke(Main, SolaraManager.CurrentTheme.Accent, 2)
-local TBar = Frame(Main, "TBar", UDim2.new(1,0,0,40), UDim2.new(), SolaraManager.CurrentTheme.PanelBg, "Panels"); Drag(Main, TBar)
-local TLbl = Label(TBar, "TLbl", "  ✨ Leyley's Premium Cheat V6.16", UDim2.new(1,-100,1,0), UDim2.new(), Enum.TextXAlignment.Left); TLbl.Font=Enum.Font.GothamBold
+
+-- STRUCTURE FIX: Main transparent frame with Stroke, InnerClip hides corners correctly
+local Main = Frame(SG, "Main", UDim2.new(0,800,0,480), UDim2.new(0.5,-400,0.5,-240)); Main.BackgroundTransparency=1
+UICorner(Main,8); SolaraManager.UI.MainFrameStroke = UIStroke(Main, SolaraManager.CurrentTheme.Accent, 2)
+local InnerClip = Instance.new("Frame", Main); InnerClip.Size=UDim2.new(1,0,1,0); InnerClip.BackgroundColor3=SolaraManager.CurrentTheme.MainBg; InnerClip.ClipsDescendants=true; UICorner(InnerClip,8); TrackTheme(InnerClip, "Backgrounds")
+
+local TBar = Frame(InnerClip, "TBar", UDim2.new(1,0,0,40), UDim2.new(), SolaraManager.CurrentTheme.PanelBg, "Panels"); Drag(Main, TBar)
+local TLbl = Label(TBar, "TLbl", "  ✨ Leyley's Premium Cheat V6.17", UDim2.new(1,-100,1,0), UDim2.new(), Enum.TextXAlignment.Left); TLbl.Font=Enum.Font.GothamBold
 local ClsB = Button(TBar, "ClsB", "X", UDim2.new(0,30,0,30), UDim2.new(1,-35,0,5), SolaraManager.CurrentTheme.Danger, nil)
 local MinB = Button(TBar, "MinB", "-", UDim2.new(0,30,0,30), UDim2.new(1,-70,0,5), SolaraManager.CurrentTheme.Warning, nil)
 
@@ -174,14 +179,14 @@ ClsB.MouseButton1Click:Connect(function() SG:Destroy() end)
 MinB.MouseButton1Click:Connect(function() ApplyTween(Main, {Size=UDim2.new(0,800,0,0)}, 0.3).Completed:Connect(function() Main.Visible=false; ResB.Parent.Visible=true; Main.Size=UDim2.new(0,800,0,480) end) end)
 ResB.MouseButton1Click:Connect(function() ResB.Parent.Visible=false; Main.Size=UDim2.new(0,800,0,0); Main.Visible=true; ApplyTween(Main, {Size=UDim2.new(0,800,0,480)}, 0.4) end)
 
-local Side = Frame(Main, "Side", UDim2.new(0,160,1,-40), UDim2.new(0,0,0,40), SolaraManager.CurrentTheme.PanelBg, "Panels"); Frame(Side, "Line", UDim2.new(0,1,1,0), UDim2.new(1,-1,0,0), SolaraManager.CurrentTheme.Stroke, "Dividers")
+local Side = Frame(InnerClip, "Side", UDim2.new(0,160,1,-40), UDim2.new(0,0,0,40), SolaraManager.CurrentTheme.PanelBg, "Panels"); Frame(Side, "Line", UDim2.new(0,1,1,0), UDim2.new(1,-1,0,0), SolaraManager.CurrentTheme.Stroke, "Dividers")
 local SBtns = Instance.new("Frame", Side); SBtns.Size=UDim2.new(1,-1,1,0); SBtns.BackgroundTransparency=1; local sLyt=Instance.new("UIListLayout",SBtns); sLyt.Padding=UDim.new(0,5); sLyt.SortOrder=Enum.SortOrder.LayoutOrder; local sPad=Instance.new("UIPadding",SBtns); sPad.PaddingTop=UDim.new(0,10); sPad.PaddingBottom=UDim.new(0,10); sPad.PaddingLeft=UDim.new(0,10); sPad.PaddingRight=UDim.new(0,10)
-local Cont = Frame(Main, "Cont", UDim2.new(1,-160,1,-40), UDim2.new(0,160,0,40)); local cPad=Instance.new("UIPadding",Cont); cPad.PaddingTop=UDim.new(0,15); cPad.PaddingBottom=UDim.new(0,15); cPad.PaddingLeft=UDim.new(0,15); cPad.PaddingRight=UDim.new(0,15)
+local Cont = Frame(InnerClip, "Cont", UDim2.new(1,-160,1,-40), UDim2.new(0,160,0,40)); local cPad=Instance.new("UIPadding",Cont); cPad.PaddingTop=UDim.new(0,15); cPad.PaddingBottom=UDim.new(0,15); cPad.PaddingLeft=UDim.new(0,15); cPad.PaddingRight=UDim.new(0,15)
 
 local function SwitchTab(tn) for n,p in pairs(SolaraManager.UI.Pages) do p.Visible=(n==tn) end; for n,b in pairs(SolaraManager.UI.TabButtons) do ApplyTween(b,{BackgroundColor3=(n==tn) and SolaraManager.CurrentTheme.Accent or SolaraManager.CurrentTheme.PanelBg},0.2) end; SolaraManager.ActiveTab=tn end
 local function BuildPage(n, i, o) local b, out = Button(SBtns, n.."Tb", i.." "..n, UDim2.new(1,0,0,35), UDim2.new(), nil, "Panels"); out.LayoutOrder=o; b.TextXAlignment=Enum.TextXAlignment.Left; Instance.new("UIPadding",b).PaddingLeft=UDim.new(0,10); local p = Instance.new("Frame", Cont); p.Size=UDim2.new(1,0,1,0); p.BackgroundTransparency=1; p.Visible=false; SolaraManager.UI.TabButtons[n]=b; SolaraManager.UI.Pages[n]=p; b.MouseButton1Click:Connect(function() SwitchTab(n) end); return p end
 
--- [ PAGE 1: PLAYER ] (No ScrollingFrame)
+-- [ PAGE 1: PLAYER ] 
 do
     local pP = BuildPage("Player", "👤", 1); local pScr = Instance.new("Frame", pP); pScr.Size=UDim2.new(1,0,1,0); pScr.BackgroundTransparency=1; local lyt=Instance.new("UIListLayout",pScr); lyt.Padding=UDim.new(0,8); lyt.SortOrder=Enum.SortOrder.LayoutOrder
     Label(pScr, "pT", "PLAYER MODIFIERS", UDim2.new(1,0,0,20), UDim2.new(), Enum.TextXAlignment.Left).LayoutOrder=1
@@ -256,16 +261,17 @@ do
     dB.MouseButton1Click:Connect(function() dB.Text="Loading Moon Dex..."; task.spawn(function() local s = pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/infyiff/backup/main/dex.lua"))() end); dB.Text=s and "Moon Dex Launched!" or "Failed to load!"; ApplyTween(dB,{BackgroundColor3=s and SolaraManager.CurrentTheme.Success or SolaraManager.CurrentTheme.Danger}); task.wait(2); dB.Text="Launch Moon Dex"; ApplyTween(dB,{BackgroundColor3=Color3.fromRGB(130,50,200)}) end) end)
 end
 
--- [ PAGE 4: GAME ]
+-- [ PAGE 4: GAME ] 
 do
     local gP = BuildPage("Game", "🎮", 4); local gC = Instance.new("Frame", gP); gC.Size=UDim2.new(1,0,1,0); gC.BackgroundTransparency=1
     local gSel = Frame(gC, "gSel", UDim2.new(0.3,0,1,0), UDim2.new(), SolaraManager.CurrentTheme.PanelBg, "Panels"); UICorner(gSel); UIStroke(gSel); local slLyt=Instance.new("UIListLayout",gSel); slLyt.Padding=UDim.new(0,5); local slPad=Instance.new("UIPadding",gSel); slPad.PaddingTop=UDim.new(0,5); slPad.PaddingLeft=UDim.new(0,5); slPad.PaddingRight=UDim.new(0,5)
     local gCF = Instance.new("Frame", gC); gCF.Size=UDim2.new(0.68,0,1,0); gCF.Position=UDim2.new(0.32,0,0,0); gCF.BackgroundTransparency=1
-    local scr = Instance.new("ScrollingFrame", gCF); scr.Size=UDim2.new(1,0,1,0); scr.BackgroundTransparency=1; scr.AutomaticCanvasSize=Enum.AutomaticSize.Y; scr.ScrollBarThickness=4; local lemLyt=Instance.new("UIListLayout",scr); lemLyt.Padding=UDim.new(0,5); lemLyt.SortOrder=Enum.SortOrder.LayoutOrder
+    
+    local scr = Instance.new("Frame", gCF); scr.Size=UDim2.new(1,0,1,0); scr.BackgroundTransparency=1; local lemLyt=Instance.new("UIListLayout",scr); lemLyt.Padding=UDim.new(0,5); lemLyt.SortOrder=Enum.SortOrder.LayoutOrder
     
     Label(scr, "cT", "💰 ECONOMY STATS", UDim2.new(1,0,0,15), UDim2.new(), Enum.TextXAlignment.Left).LayoutOrder=1
-    SolaraManager.UI.CashStatusLbl = Label(scr, "cS", "Cash: $0", UDim2.new(1,0,0,25), UDim2.new(), Enum.TextXAlignment.Left); SolaraManager.UI.CashStatusLbl.LayoutOrder=2; SolaraManager.UI.CashStatusLbl.TextColor3=SolaraManager.CurrentTheme.Success
-    SolaraManager.UI.CashRateLbl = Label(scr, "cR", "Rate: $0/sec", UDim2.new(1,0,0,25), UDim2.new(), Enum.TextXAlignment.Left); SolaraManager.UI.CashRateLbl.LayoutOrder=3; SolaraManager.UI.CashRateLbl.TextColor3=Color3.fromRGB(150,150,150)
+    SolaraManager.UI.CashStatusLbl = Label(scr, "cS", "Cash: $0", UDim2.new(1,0,0,20), UDim2.new(), Enum.TextXAlignment.Left); SolaraManager.UI.CashStatusLbl.LayoutOrder=2; SolaraManager.UI.CashStatusLbl.TextColor3=SolaraManager.CurrentTheme.Success
+    SolaraManager.UI.CashRateLbl = Label(scr, "cR", "Rate: $0/sec", UDim2.new(1,0,0,20), UDim2.new(), Enum.TextXAlignment.Left); SolaraManager.UI.CashRateLbl.LayoutOrder=3; SolaraManager.UI.CashRateLbl.TextColor3=Color3.fromRGB(150,150,150)
     Frame(scr, "d0", UDim2.new(1,0,0,2), UDim2.new(), SolaraManager.CurrentTheme.Stroke, "Dividers").LayoutOrder=4
     
     Label(scr, "fT", "🍋 AUTO FARM", UDim2.new(1,0,0,15), UDim2.new(), Enum.TextXAlignment.Left).LayoutOrder=5
@@ -289,7 +295,7 @@ do
     local smB = Button(smAR, "smB", "Smart Mix", UDim2.new(0.48,0,1,0), UDim2.new(), SolaraManager.CurrentTheme.PanelBg); local ssmB = Button(smAR, "ssmB", "Safe Smart", UDim2.new(0.48,0,1,0), UDim2.new(0.52,0,0,0), SolaraManager.CurrentTheme.PanelBg); SolaraManager.UI.Toggles.Smart=smB; SolaraManager.UI.Toggles.SafeSmart=ssmB
     
     Button(gSel, "g1B", "Sell Lemons", UDim2.new(1,0,0,35), UDim2.new(), SolaraManager.CurrentTheme.Accent, "Panels")
-    Label(gSel, "comingS", "Coming soon...", UDim2.new(1,0,0,20), UDim2.new(), Enum.TextXAlignment.Center) -- Placé dans gSel en dessous de Sell Lemons
+    Label(gSel, "comingS", "Coming soon...", UDim2.new(1,0,0,20), UDim2.new(), Enum.TextXAlignment.Center)
     
     local function UpdG() SolaraManager.SyncVisuals(); if SolaraManager.ActiveFarmState=="Off" and SolaraManager.ActiveSmartState=="Off" then workspace.CurrentCamera.CameraType=Enum.CameraType.Custom; SolaraManager.UI.FarmStatusLbl.Text="Status: Idle" end; if SolaraManager.ActiveBuyState=="Off" and SolaraManager.ActiveSmartState=="Off" then SolaraManager.UI.TycoonStatusLbl.Text="Status: Idle" end end
     fSB.MouseButton1Click:Connect(function() local v=tonumber(fSI.Text); if v and v>0 then SolaraManager.FarmSpeed=math.min(v,4); fSB.Text=tostring(SolaraManager.FarmSpeed) end end)
@@ -303,76 +309,118 @@ do
     ssmB.MouseButton1Click:Connect(function() SolaraManager.ActiveSmartState=(SolaraManager.ActiveSmartState=="Safe") and "Off" or "Safe"; if SolaraManager.ActiveSmartState=="Safe" then SolaraManager.ActiveFarmState="Off"; SolaraManager.ActiveBuyState="Off" end; SolaraManager.HasSafetyRespawned=false; UpdG() end)
 end
 
--- [ PAGE 5: MUSIC ] (No ScrollingFrame)
+-- [ PAGE 5: MUSIC ] 
 do
     local mP = BuildPage("Music", "🎵", 5); local mScr = Instance.new("Frame", mP); mScr.Size=UDim2.new(1,0,1,0); mScr.BackgroundTransparency=1; local mLyt=Instance.new("UIListLayout",mScr); mLyt.Padding=UDim.new(0,4); mLyt.SortOrder=Enum.SortOrder.LayoutOrder
     Label(mScr, "mT", "🎵 CUSTOM MUSIC PLAYER", UDim2.new(1,0,0,15), UDim2.new(), Enum.TextXAlignment.Left).LayoutOrder=1
     local mR2 = Frame(mScr, "mR2", UDim2.new(1,0,0,25), UDim2.new(), nil, "Backgrounds"); mR2.BackgroundTransparency=1; mR2.LayoutOrder=2
-    local mI = Input(mR2, "mI", "Audio ID", UDim2.new(0.48,0,1,0), UDim2.new()); local vI = Input(mR2, "vI", "Vol: 100", UDim2.new(0.20,0,1,0), UDim2.new(0.52,0,0,0)); SolaraManager.UI.Inputs.Vol=vI; local pB = Button(mR2, "pB", "Load", UDim2.new(0.24,0,1,0), UDim2.new(0.76,0,0,0), SolaraManager.CurrentTheme.Accent)
+    local mI = Input(mR2, "mI", "Audio ID ou Fichier", UDim2.new(0.48,0,1,0), UDim2.new()); local vI = Input(mR2, "vI", "Vol: 100", UDim2.new(0.20,0,1,0), UDim2.new(0.52,0,0,0)); SolaraManager.UI.Inputs.Vol=vI; local pB = Button(mR2, "pB", "Load", UDim2.new(0.24,0,1,0), UDim2.new(0.76,0,0,0), SolaraManager.CurrentTheme.Accent)
     local mR3 = Frame(mScr, "mR3", UDim2.new(1,0,0,25), UDim2.new(), nil, "Backgrounds"); mR3.BackgroundTransparency=1; mR3.LayoutOrder=3
     local psB = Button(mR3, "psB", "Pause", UDim2.new(0.48,0,1,0), UDim2.new(0,0,0,0), SolaraManager.CurrentTheme.Warning); local stB = Button(mR3, "stB", "Stop", UDim2.new(0.48,0,1,0), UDim2.new(0.52,0,0,0), SolaraManager.CurrentTheme.Danger)
     SolaraManager.UI.MusicStatusLbl = Label(mScr, "mSL", "Status: No music", UDim2.new(1,0,0,15), UDim2.new(), Enum.TextXAlignment.Left); SolaraManager.UI.MusicStatusLbl.LayoutOrder=4; SolaraManager.UI.MusicStatusLbl.TextColor3=Color3.fromRGB(150,150,150)
     Frame(mScr, "sD", UDim2.new(1,0,0,2), UDim2.new(), SolaraManager.CurrentTheme.Stroke, "Dividers").LayoutOrder=5
-    Label(mScr, "pT", "📂 PLAYLISTS", UDim2.new(1,0,0,15), UDim2.new(), Enum.TextXAlignment.Left).LayoutOrder=6
-    for i=1,5 do
-        local r = Frame(mScr, "pr"..i, UDim2.new(1,0,0,25), UDim2.new(), nil, "Backgrounds"); r.BackgroundTransparency=1; r.LayoutOrder=6+i
-        local iI = Input(r, "iI", "ID", UDim2.new(0.23,0,1,0), UDim2.new()); local nI = Input(r, "nI", "Name", UDim2.new(0.43,0,1,0), UDim2.new(0.25,0,0,0))
-        local plB = Button(r, "plB", "▶", UDim2.new(0.14,0,1,0), UDim2.new(0.70,0,0,0), SolaraManager.CurrentTheme.Success); local svB = Button(r, "svB", "Save", UDim2.new(0.14,0,1,0), UDim2.new(0.86,0,0,0), SolaraManager.CurrentTheme.Accent)
-        table.insert(SolaraManager.UI.PlaylistInputs, {IdInput=iI, NameInput=nI})
-        svB.MouseButton1Click:Connect(function() SolaraManager.Playlists[i].Id=iI.Text; SolaraManager.Playlists[i].Name=nI.Text; svB.Text="Saved!"; task.wait(1); svB.Text="Save" end)
-        plB.MouseButton1Click:Connect(function() if iI.Text~="" then mI.Text=iI.Text; local nid=tonumber(iI.Text); if nid then SolaraManager.CustomMusicId=tostring(nid); if SolaraManager.CustomMusicInstance then SolaraManager.CustomMusicInstance:Destroy() end; SolaraManager.CustomMusicName=nI.Text~="" and nI.Text or "Loading..."; local nS=Instance.new("Sound"); nS.SoundId="rbxassetid://"..nid; nS.Looped=true; nS.Volume=SolaraManager.CustomMusicVolume/100; nS.Parent=CoreGui; SolaraManager.CustomMusicInstance=nS; nS:Play(); psB.Text="Pause" end end end)
+    
+    Label(mScr, "pT", "📂 PLAYLIST MANAGER", UDim2.new(1,0,0,15), UDim2.new(), Enum.TextXAlignment.Left).LayoutOrder=6
+    local pwR = Frame(mScr, "pwR", UDim2.new(1,0,0,30), UDim2.new(), nil, "Backgrounds"); pwR.BackgroundTransparency=1; pwR.LayoutOrder=7
+    local piI = Input(pwR, "piI", "ID/Fichier", UDim2.new(0.3,0,1,0), UDim2.new()); local pnI = Input(pwR, "pnI", "Nom", UDim2.new(0.4,0,1,0), UDim2.new(0.32,0,0,0)); local pwB = Button(pwR, "pwB", "Ajouter", UDim2.new(0.26,0,1,0), UDim2.new(0.74,0,0,0), SolaraManager.CurrentTheme.Success)
+    
+    local plLF = Frame(mScr, "plLF", UDim2.new(1,0,1,-170), UDim2.new(), SolaraManager.CurrentTheme.PanelBg, "Panels"); plLF.LayoutOrder=8; UICorner(plLF); UIStroke(plLF)
+    local plS = Instance.new("ScrollingFrame", plLF); plS.Size=UDim2.new(1,-10,1,-10); plS.Position=UDim2.new(0,5,0,5); plS.BackgroundTransparency=1; plS.AutomaticCanvasSize=Enum.AutomaticSize.Y; plS.ScrollBarThickness=4; local plSLyt=Instance.new("UIListLayout",plS); plSLyt.Padding=UDim.new(0,5)
+    SolaraManager.UI.PlaylistList = plS
+    
+    local function PlayCustomAudio(idTxt)
+        local assetId = idTxt; local n = tonumber(idTxt)
+        if n then 
+            assetId = "rbxassetid://"..idTxt 
+            task.spawn(function() local s,pI=pcall(function() return MarketplaceService:GetProductInfo(n) end); SolaraManager.CustomMusicName=(s and pI) and pI.Name or "Audio ID: "..idTxt end)
+        else
+            if getcustomasset and isfile and isfile(idTxt) then
+                assetId = getcustomasset(idTxt)
+                SolaraManager.CustomMusicName = "Local: " .. idTxt
+            else
+                SolaraManager.CustomMusicName = "Invalid Audio/File"
+                return
+            end
+        end
+        SolaraManager.CustomMusicId = idTxt
+        local vN = tonumber(string.match(vI.Text, "%d+"))
+        if vN then SolaraManager.CustomMusicVolume=math.max(0,math.min(100,vN)) end
+        if SolaraManager.CustomMusicInstance then SolaraManager.CustomMusicInstance:Destroy() end
+        local nS=Instance.new("Sound"); nS.SoundId=assetId; nS.Looped=true; nS.Volume=SolaraManager.CustomMusicVolume/100; nS.Parent=CoreGui; SolaraManager.CustomMusicInstance=nS; nS:Play()
+        psB.Text="Pause"
     end
-    pB.MouseButton1Click:Connect(function() local id=tonumber(mI.Text); if not id then return end; SolaraManager.CustomMusicId=tostring(id); local vN=tonumber(string.match(vI.Text,"%d+")); if vN then SolaraManager.CustomMusicVolume=math.max(0,math.min(100,vN)) end; if SolaraManager.CustomMusicInstance then SolaraManager.CustomMusicInstance:Destroy() end; SolaraManager.CustomMusicName="Loading..."; local nS=Instance.new("Sound"); nS.SoundId="rbxassetid://"..id; nS.Looped=true; nS.Volume=SolaraManager.CustomMusicVolume/100; nS.Parent=CoreGui; SolaraManager.CustomMusicInstance=nS; nS:Play(); psB.Text="Pause"; task.spawn(function() local s,pI=pcall(function() return MarketplaceService:GetProductInfo(id) end); SolaraManager.CustomMusicName=(s and pI) and pI.Name or "Audio ID: "..id end) end)
+    
+    local function UpdPL() 
+        for _,c in ipairs(plS:GetChildren()) do if c:IsA("Frame") then c:Destroy() end end
+        for i, pl in ipairs(SolaraManager.Playlists) do
+            local f = Frame(plS, "pl"..i, UDim2.new(1,0,0,30), UDim2.new(), nil, "Backgrounds"); f.BackgroundTransparency=1
+            local b = Button(f, "plB", pl.Name .. " ("..pl.Id..")", UDim2.new(0.8,0,1,0), UDim2.new(), SolaraManager.CurrentTheme.MainBg, "Backgrounds")
+            local del = Button(f, "del", "X", UDim2.new(0.18,0,1,0), UDim2.new(0.82,0,0,0), SolaraManager.CurrentTheme.Danger)
+            b.MouseButton1Click:Connect(function() mI.Text=pl.Id; PlayCustomAudio(pl.Id) end)
+            del.MouseButton1Click:Connect(function() table.remove(SolaraManager.Playlists, i); UpdPL() end)
+        end
+    end
+    pwB.MouseButton1Click:Connect(function() if piI.Text~="" and pnI.Text~="" then table.insert(SolaraManager.Playlists, {Id=piI.Text, Name=pnI.Text}); piI.Text=""; pnI.Text=""; UpdPL() end end)
+    
+    pB.MouseButton1Click:Connect(function() if mI.Text~="" then PlayCustomAudio(mI.Text) end end)
     vI.FocusLost:Connect(function() local vN=tonumber(string.match(vI.Text,"%d+")); if vN then SolaraManager.CustomMusicVolume=math.max(0,math.min(100,vN)); vI.Text="Vol: "..SolaraManager.CustomMusicVolume; if SolaraManager.CustomMusicInstance then SolaraManager.CustomMusicInstance.Volume=SolaraManager.CustomMusicVolume/100 end end end)
     psB.MouseButton1Click:Connect(function() local ci=SolaraManager.CustomMusicInstance; if ci then if ci.IsPlaying then ci:Pause(); psB.Text="Resume" else ci:Resume(); psB.Text="Pause" end end end)
     stB.MouseButton1Click:Connect(function() local ci=SolaraManager.CustomMusicInstance; if ci then ci:Stop(); ci.TimePosition=0; psB.Text="Pause" end end)
 end
 
--- [ PAGE 6: SETTINGS & CONFIG ] (No ScrollingFrame)
+-- [ PAGE 6: SETTINGS & CONFIG ] 
+local function LoadConfigData(cD)
+    if cD.AutoLoadConfig~=nil then SolaraManager.AutoLoadConfig=cD.AutoLoadConfig end
+    if cD.IsAntiAfk~=nil then SolaraManager.IsAntiAfk=cD.IsAntiAfk end; if cD.IsNoclip~=nil then SolaraManager.IsNoclip=cD.IsNoclip end; if cD.IsESP~=nil then SolaraManager.IsESP=cD.IsESP end; if cD.IsFly~=nil then SolaraManager.IsFly=cD.IsFly end; if cD.IsInfJump~=nil then SolaraManager.IsInfJump=cD.IsInfJump end; if cD.IsAimbot~=nil then SolaraManager.IsAimbot=cD.IsAimbot end
+    if cD.ESP_Name~=nil then SolaraManager.ESP_Name=cD.ESP_Name end; if cD.ESP_Health~=nil then SolaraManager.ESP_Health=cD.ESP_Health end; if cD.ESP_Pct~=nil then SolaraManager.ESP_Pct=cD.ESP_Pct end; if cD.ESP_Tracer~=nil then SolaraManager.ESP_Tracer=cD.ESP_Tracer end
+    SolaraManager.SpeedOverride=cD.Speed; SolaraManager.JumpOverride=cD.Jump; if cD.FarmSpeed then SolaraManager.FarmSpeed=cD.FarmSpeed end; if cD.BuySpeed then SolaraManager.BuySpeed=cD.BuySpeed end; if cD.ActiveFarmState then SolaraManager.ActiveFarmState=cD.ActiveFarmState end; if cD.ActiveBuyState then SolaraManager.ActiveBuyState=cD.ActiveBuyState end; if cD.ActiveSmartState then SolaraManager.ActiveSmartState=cD.ActiveSmartState end; if cD.CustomMusicId then SolaraManager.CustomMusicId=cD.CustomMusicId end; if cD.CustomMusicVolume then SolaraManager.CustomMusicVolume=cD.CustomMusicVolume end
+    if cD.Playlists then SolaraManager.Playlists=cD.Playlists end
+    if cD.Waypoints then SolaraManager.Waypoints={}; for i,v in ipairs(cD.Waypoints) do table.insert(SolaraManager.Waypoints, {Name=v.Name, CFrame=CFrame.new(v.X,v.Y,v.Z)}) end end
+    if cD.Theme then SolaraManager.ApplyTheme(cD.Theme) else SolaraManager.SyncVisuals() end
+end
+
 do
     local sP = BuildPage("Settings", "⚙️", 6); local sScr = Instance.new("Frame", sP); sScr.Size=UDim2.new(1,0,1,0); sScr.BackgroundTransparency=1; local sLyt=Instance.new("UIListLayout",sScr); sLyt.Padding=UDim.new(0,5); sLyt.SortOrder=Enum.SortOrder.LayoutOrder
     
-    Label(sScr, "psT", "👤 PLAYER SETTINGS", UDim2.new(1,0,0,15), UDim2.new(), Enum.TextXAlignment.Left).LayoutOrder=1
-    local eR2 = Frame(sScr, "eR2", UDim2.new(1,0,0,30), UDim2.new(), nil, "Backgrounds"); eR2.BackgroundTransparency=1; eR2.LayoutOrder=2
-    local enTg = Button(eR2, "enTg", "Show Name", UDim2.new(0.32,0,1,0), UDim2.new()); local ehTg = Button(eR2, "ehTg", "Show Health", UDim2.new(0.32,0,1,0), UDim2.new(0.34,0,0,0)); local epTg = Button(eR2, "epTg", "Health as %", UDim2.new(0.32,0,1,0), UDim2.new(0.68,0,0,0))
-    SolaraManager.UI.Toggles.eName=enTg; SolaraManager.UI.Toggles.eHealth=ehTg; SolaraManager.UI.Toggles.ePct=epTg
-    enTg.MouseButton1Click:Connect(function() SolaraManager.ESP_Name=not SolaraManager.ESP_Name; SolaraManager.SyncVisuals() end)
-    ehTg.MouseButton1Click:Connect(function() SolaraManager.ESP_Health=not SolaraManager.ESP_Health; SolaraManager.SyncVisuals() end)
-    epTg.MouseButton1Click:Connect(function() SolaraManager.ESP_Pct=not SolaraManager.ESP_Pct; SolaraManager.SyncVisuals() end)
-    
-    local eR3 = Frame(sScr, "eR3", UDim2.new(1,0,0,30), UDim2.new(), nil, "Backgrounds"); eR3.BackgroundTransparency=1; eR3.LayoutOrder=3
-    local etTg = Button(eR3, "etTg", "Show Tracers (Line)", UDim2.new(0.48,0,1,0), UDim2.new()); local eCol = Button(eR3, "eCol", "Change Tracer/Outline Color", UDim2.new(0.48,0,1,0), UDim2.new(0.52,0,0,0), SolaraManager.CurrentTheme.Accent)
-    SolaraManager.UI.Toggles.eTracer=etTg; etTg.MouseButton1Click:Connect(function() SolaraManager.ESP_Tracer=not SolaraManager.ESP_Tracer; SolaraManager.SyncVisuals() end)
-    local espColors = {Color3.new(1,1,1), Color3.new(1,0,0), Color3.new(0,1,0), Color3.new(0,0,1), Color3.new(1,1,0), Color3.new(1,0,1), Color3.new(0,1,1)}
-    local cId = 1
-    eCol.MouseButton1Click:Connect(function() cId=(cId%#espColors)+1; SolaraManager.ESP_LineColor=espColors[cId]; SolaraManager.ESP_OutlineColor=espColors[cId]; eCol.TextColor3=espColors[cId] end)
-
-    Frame(sScr, "dPs", UDim2.new(1,0,0,2), UDim2.new(), SolaraManager.CurrentTheme.Stroke, "Dividers").LayoutOrder=4
-    
-    Label(sScr, "cT", "💾 SCRIPT CONFIG", UDim2.new(1,0,0,15), UDim2.new(), Enum.TextXAlignment.Left).LayoutOrder=5
-    local cR = Frame(sScr, "cR", UDim2.new(1,0,0,30), UDim2.new(), nil, "Backgrounds"); cR.BackgroundTransparency=1; cR.LayoutOrder=6
+    Label(sScr, "cT", "💾 SCRIPT CONFIG", UDim2.new(1,0,0,15), UDim2.new(), Enum.TextXAlignment.Left).LayoutOrder=1
+    local cR0 = Frame(sScr, "cR0", UDim2.new(1,0,0,30), UDim2.new(), nil, "Backgrounds"); cR0.BackgroundTransparency=1; cR0.LayoutOrder=2
+    local aLdTg = Button(cR0, "aLdTg", "Auto-Load Config on Launch", UDim2.new(1,0,1,0), UDim2.new(), SolaraManager.CurrentTheme.PanelBg); SolaraManager.UI.Toggles.AutoLoad=aLdTg
+    aLdTg.MouseButton1Click:Connect(function() SolaraManager.AutoLoadConfig=not SolaraManager.AutoLoadConfig; SolaraManager.SyncVisuals() end)
+    local cR = Frame(sScr, "cR", UDim2.new(1,0,0,30), UDim2.new(), nil, "Backgrounds"); cR.BackgroundTransparency=1; cR.LayoutOrder=3
     local svB = Button(cR, "svB", "Save Config", UDim2.new(0.48,0,1,0), UDim2.new(0,0,0,0), SolaraManager.CurrentTheme.Success); local ldB = Button(cR, "ldB", "Load Config", UDim2.new(0.48,0,1,0), UDim2.new(0.52,0,0,0), SolaraManager.CurrentTheme.Warning)
-    Frame(sScr, "dC", UDim2.new(1,0,0,2), UDim2.new(), SolaraManager.CurrentTheme.Stroke, "Dividers").LayoutOrder=7
+    Frame(sScr, "dC", UDim2.new(1,0,0,2), UDim2.new(), SolaraManager.CurrentTheme.Stroke, "Dividers").LayoutOrder=4
     
     svB.MouseButton1Click:Connect(function()
-        local cD = {Theme=SolaraManager.CurrentThemeName, IsAntiAfk=SolaraManager.IsAntiAfk, IsNoclip=SolaraManager.IsNoclip, IsESP=SolaraManager.IsESP, IsFly=SolaraManager.IsFly, IsInfJump=SolaraManager.IsInfJump, IsAimbot=SolaraManager.IsAimbot, ESP_Name=SolaraManager.ESP_Name, ESP_Health=SolaraManager.ESP_Health, ESP_Pct=SolaraManager.ESP_Pct, ESP_Tracer=SolaraManager.ESP_Tracer, Speed=SolaraManager.SpeedOverride, Jump=SolaraManager.JumpOverride, FarmSpeed=SolaraManager.FarmSpeed, BuySpeed=SolaraManager.BuySpeed, ActiveFarmState=SolaraManager.ActiveFarmState, ActiveBuyState=SolaraManager.ActiveBuyState, ActiveSmartState=SolaraManager.ActiveSmartState, CustomMusicId=SolaraManager.CustomMusicId, CustomMusicVolume=SolaraManager.CustomMusicVolume, Playlists=SolaraManager.Playlists, Waypoints={}}
+        local cD = {AutoLoadConfig=SolaraManager.AutoLoadConfig, Theme=SolaraManager.CurrentThemeName, IsAntiAfk=SolaraManager.IsAntiAfk, IsNoclip=SolaraManager.IsNoclip, IsESP=SolaraManager.IsESP, IsFly=SolaraManager.IsFly, IsInfJump=SolaraManager.IsInfJump, IsAimbot=SolaraManager.IsAimbot, ESP_Name=SolaraManager.ESP_Name, ESP_Health=SolaraManager.ESP_Health, ESP_Pct=SolaraManager.ESP_Pct, ESP_Tracer=SolaraManager.ESP_Tracer, Speed=SolaraManager.SpeedOverride, Jump=SolaraManager.JumpOverride, FarmSpeed=SolaraManager.FarmSpeed, BuySpeed=SolaraManager.BuySpeed, ActiveFarmState=SolaraManager.ActiveFarmState, ActiveBuyState=SolaraManager.ActiveBuyState, ActiveSmartState=SolaraManager.ActiveSmartState, CustomMusicId=SolaraManager.CustomMusicId, CustomMusicVolume=SolaraManager.CustomMusicVolume, Playlists=SolaraManager.Playlists, Waypoints={}}
         for i,v in ipairs(SolaraManager.Waypoints) do table.insert(cD.Waypoints, {Name=v.Name, X=v.CFrame.X, Y=v.CFrame.Y, Z=v.CFrame.Z}) end
         if writefile then writefile(SolaraManager.ConfigFilename, HttpService:JSONEncode(cD)); svB.Text="Saved!"; task.wait(1); svB.Text="Save Config" end
     end)
     ldB.MouseButton1Click:Connect(function()
         if readfile and isfile and isfile(SolaraManager.ConfigFilename) then
             local cD = HttpService:JSONDecode(readfile(SolaraManager.ConfigFilename))
-            if cD then
-                if cD.IsAntiAfk~=nil then SolaraManager.IsAntiAfk=cD.IsAntiAfk end; if cD.IsNoclip~=nil then SolaraManager.IsNoclip=cD.IsNoclip end; if cD.IsESP~=nil then SolaraManager.IsESP=cD.IsESP end; if cD.IsFly~=nil then SolaraManager.IsFly=cD.IsFly end; if cD.IsInfJump~=nil then SolaraManager.IsInfJump=cD.IsInfJump end; if cD.IsAimbot~=nil then SolaraManager.IsAimbot=cD.IsAimbot end
-                if cD.ESP_Name~=nil then SolaraManager.ESP_Name=cD.ESP_Name end; if cD.ESP_Health~=nil then SolaraManager.ESP_Health=cD.ESP_Health end; if cD.ESP_Pct~=nil then SolaraManager.ESP_Pct=cD.ESP_Pct end; if cD.ESP_Tracer~=nil then SolaraManager.ESP_Tracer=cD.ESP_Tracer end
-                SolaraManager.SpeedOverride=cD.Speed; SolaraManager.JumpOverride=cD.Jump; if cD.FarmSpeed then SolaraManager.FarmSpeed=cD.FarmSpeed end; if cD.BuySpeed then SolaraManager.BuySpeed=cD.BuySpeed end; if cD.ActiveFarmState then SolaraManager.ActiveFarmState=cD.ActiveFarmState end; if cD.ActiveBuyState then SolaraManager.ActiveBuyState=cD.ActiveBuyState end; if cD.ActiveSmartState then SolaraManager.ActiveSmartState=cD.ActiveSmartState end; if cD.CustomMusicId then SolaraManager.CustomMusicId=cD.CustomMusicId end; if cD.CustomMusicVolume then SolaraManager.CustomMusicVolume=cD.CustomMusicVolume end; if cD.Playlists then SolaraManager.Playlists=cD.Playlists end
-                if cD.Waypoints then SolaraManager.Waypoints={}; for i,v in ipairs(cD.Waypoints) do table.insert(SolaraManager.Waypoints, {Name=v.Name, CFrame=CFrame.new(v.X,v.Y,v.Z)}) end end
-                if cD.Theme then SolaraManager.ApplyTheme(cD.Theme) else SolaraManager.SyncVisuals() end; ldB.Text="Loaded!"; task.wait(1); ldB.Text="Load Config"
-            end
+            if cD then LoadConfigData(cD); ldB.Text="Loaded!"; task.wait(1); ldB.Text="Load Config" end
         end
     end)
+    
+    Label(sScr, "psT", "👤 PLAYER SETTINGS", UDim2.new(1,0,0,15), UDim2.new(), Enum.TextXAlignment.Left).LayoutOrder=5
+    local eR2 = Frame(sScr, "eR2", UDim2.new(1,0,0,30), UDim2.new(), nil, "Backgrounds"); eR2.BackgroundTransparency=1; eR2.LayoutOrder=6
+    local enTg = Button(eR2, "enTg", "Show Name", UDim2.new(0.32,0,1,0), UDim2.new()); local ehTg = Button(eR2, "ehTg", "Show Health", UDim2.new(0.32,0,1,0), UDim2.new(0.34,0,0,0)); local epTg = Button(eR2, "epTg", "Health as %", UDim2.new(0.32,0,1,0), UDim2.new(0.68,0,0,0))
+    SolaraManager.UI.Toggles.eName=enTg; SolaraManager.UI.Toggles.eHealth=ehTg; SolaraManager.UI.Toggles.ePct=epTg
+    enTg.MouseButton1Click:Connect(function() SolaraManager.ESP_Name=not SolaraManager.ESP_Name; SolaraManager.SyncVisuals() end)
+    ehTg.MouseButton1Click:Connect(function() SolaraManager.ESP_Health=not SolaraManager.ESP_Health; SolaraManager.SyncVisuals() end)
+    epTg.MouseButton1Click:Connect(function() SolaraManager.ESP_Pct=not SolaraManager.ESP_Pct; SolaraManager.SyncVisuals() end)
+    
+    local eR3 = Frame(sScr, "eR3", UDim2.new(1,0,0,30), UDim2.new(), nil, "Backgrounds"); eR3.BackgroundTransparency=1; eR3.LayoutOrder=7
+    local etTg = Button(eR3, "etTg", "Show Tracers (Line)", UDim2.new(0.48,0,1,0), UDim2.new()); local eCol = Button(eR3, "eCol", "Change Tracer/Outline Color", UDim2.new(0.48,0,1,0), UDim2.new(0.52,0,0,0), SolaraManager.CurrentTheme.Accent)
+    SolaraManager.UI.Toggles.eTracer=etTg; etTg.MouseButton1Click:Connect(function() SolaraManager.ESP_Tracer=not SolaraManager.ESP_Tracer; SolaraManager.SyncVisuals() end)
+    local espColors = {Color3.new(1,1,1), Color3.new(1,0,0), Color3.new(0,1,0), Color3.new(0,0,1), Color3.new(1,1,0), Color3.new(1,0,1), Color3.new(0,1,1)}
+    local cId = 1
+    eCol.MouseButton1Click:Connect(function() cId=(cId%#espColors)+1; SolaraManager.ESP_LineColor=espColors[cId]; SolaraManager.ESP_OutlineColor=espColors[cId]; eCol.TextColor3=espColors[cId] end)
+
+    Frame(sScr, "dPs", UDim2.new(1,0,0,2), UDim2.new(), SolaraManager.CurrentTheme.Stroke, "Dividers").LayoutOrder=8
+
     local function BGrp(t, g, o) Label(sScr, t.."L", t, UDim2.new(1,0,0,15), UDim2.new(), Enum.TextXAlignment.Left).LayoutOrder=o; local tg=Instance.new("Frame",sScr); tg.BackgroundTransparency=1; tg.LayoutOrder=o+1; local gl=Instance.new("UIGridLayout",tg); gl.CellSize=UDim2.new(0.31,0,0,25); gl.CellPadding=UDim2.new(0.035,0,0,5); gl.SortOrder=Enum.SortOrder.LayoutOrder; local c=0; for tn,td in pairs(Themes) do if td.Group==g then c=c+1; local b=Button(tg, tn.."B", tn, UDim2.new(), UDim2.new(), SolaraManager.CurrentTheme.PanelBg, "Panels"); b.MouseButton1Click:Connect(function() SolaraManager.ApplyTheme(tn) end) end end tg.Size=UDim2.new(1,0,0,math.ceil(c/3)*30); return o+2 end
-    BGrp("🕹️ VIDEO GAMES THEMES", "Game", BGrp("🎨 COLOR THEMES", "Color", 8))
+    BGrp("🕹️ VIDEO GAMES THEMES", "Game", BGrp("🎨 COLOR THEMES", "Color", 9))
 end
 
 SwitchTab("Player"); SolaraManager.SyncVisuals()
@@ -398,6 +446,12 @@ UserInputService.InputEnded:Connect(function(i, gp)
     elseif i.KeyCode == Enum.KeyCode.D then SolaraManager.FlyCtrl.R=0 end
 end)
 UserInputService.JumpRequest:Connect(function() if SolaraManager.IsInfJump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping) end end)
+
+-- [ AUTO LOAD INIT ]
+if readfile and isfile and isfile(SolaraManager.ConfigFilename) then
+    local s, cD = pcall(function() return HttpService:JSONDecode(readfile(SolaraManager.ConfigFilename)) end)
+    if s and cD and cD.AutoLoadConfig then LoadConfigData(cD) end
+end
 
 -- [ 7. LOOPS & LOGIC ENGINE ]
 RunService.RenderStepped:Connect(function()
@@ -454,18 +508,18 @@ task.spawn(function()
                         
                         if SolaraManager.ESP_Tracer then
                             local pos, vis = cam:WorldToViewportPoint(p.Character.HumanoidRootPart.Position)
-                            if vis then
-                                if not ESP_Lines[p.Name] and Drawing then ESP_Lines[p.Name] = Drawing.new("Line") end
-                                if ESP_Lines[p.Name] then
-                                    ESP_Lines[p.Name].Visible = true
-                                    -- ORIGIN CENTERED
-                                    ESP_Lines[p.Name].From = Vector2.new(cam.ViewportSize.X/2, cam.ViewportSize.Y/2)
-                                    ESP_Lines[p.Name].To = Vector2.new(pos.X, pos.Y)
-                                    ESP_Lines[p.Name].Color = SolaraManager.ESP_LineColor
-                                    ESP_Lines[p.Name].Thickness = 1
-                                end
-                            else
-                                if ESP_Lines[p.Name] then ESP_Lines[p.Name].Visible = false end
+                            if not vis and pos.Z < 0 then
+                                local center = Vector2.new(cam.ViewportSize.X/2, cam.ViewportSize.Y/2)
+                                local dir = (Vector2.new(pos.X, pos.Y) - center).Unit
+                                pos = Vector3.new(center.X - dir.X * 2000, center.Y - dir.Y * 2000, 0)
+                            end
+                            if not ESP_Lines[p.Name] and Drawing then ESP_Lines[p.Name] = Drawing.new("Line") end
+                            if ESP_Lines[p.Name] then
+                                ESP_Lines[p.Name].Visible = true
+                                ESP_Lines[p.Name].From = Vector2.new(cam.ViewportSize.X/2, cam.ViewportSize.Y/2)
+                                ESP_Lines[p.Name].To = Vector2.new(pos.X, pos.Y)
+                                ESP_Lines[p.Name].Color = SolaraManager.ESP_LineColor
+                                ESP_Lines[p.Name].Thickness = 1
                             end
                         else
                             if ESP_Lines[p.Name] then ESP_Lines[p.Name].Visible = false end
