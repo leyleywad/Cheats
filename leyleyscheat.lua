@@ -1,11 +1,10 @@
 --[[ 
-    Leyley's Premium Cheat V6.19 - THE ECONOMY FIX
-    - Fixed: Auto Buy trying to buy insanely expensive items because of unrecognized suffix variants (e.g. "tres" instead of "tre").
-    - Added: All Latin variants (tres, quinqua, ses, septem, noven) added to the suffix database.
-    - Security: If an item's price cannot be parsed, the script will safely ignore it rather than assuming it's cheap.
+    Leyley's Premium Cheat V6.20 - THE ANTI-AFK FIX
+    - Fixed: Anti-AFK logic is now fully functional (hooks into LocalPlayer.Idled).
+    - Prevents the 20-minute idle disconnect when enabled.
 ]]--
 
-print("Leyley's Premium Cheat V6.19 loaded")
+print("Leyley's Premium Cheat V6.20 loaded")
 
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -71,7 +70,7 @@ local function ParsePrice(str)
         if SuffixDict[suf] then 
             num = num * (10 ^ (SuffixDict[suf] * 3)) 
         else 
-            return nil -- SAFEFALL: If suffix is unknown, we drop the item completely
+            return nil
         end 
     end
     return num
@@ -91,7 +90,7 @@ end
 
 -- [ 3. STATE MANAGER ]
 local SolaraManager = {
-    GuiName="LeyleysCheat_V6_19", CurrentThemeName="Default", CurrentTheme=Themes.Default, ActiveTab="Player",
+    GuiName="LeyleysCheat_V6_20", CurrentThemeName="Default", CurrentTheme=Themes.Default, ActiveTab="Player",
     ThemeObjects={Backgrounds={},Panels={},Accents={},Strokes={},Texts={},Dividers={}},
     UI={TabButtons={},Pages={},PlaylistInputs={},Toggles={},Inputs={},Texts={},WaypointList=nil,PlaylistList=nil},
     IsAntiAfk=false, IsNoclip=false, IsESP=false, IsFly=false, IsInfJump=false, IsAimbot=false, ClickTP=false, AutoLoadConfig=false,
@@ -184,7 +183,7 @@ UICorner(Main,8); SolaraManager.UI.MainFrameStroke = UIStroke(Main, SolaraManage
 local InnerClip = Instance.new("Frame", Main); InnerClip.Size=UDim2.new(1,0,1,0); InnerClip.BackgroundColor3=SolaraManager.CurrentTheme.MainBg; InnerClip.ClipsDescendants=true; UICorner(InnerClip,8); TrackTheme(InnerClip, "Backgrounds")
 
 local TBar = Frame(InnerClip, "TBar", UDim2.new(1,0,0,40), UDim2.new(), SolaraManager.CurrentTheme.PanelBg, "Panels"); Drag(Main, TBar)
-local TLbl = Label(TBar, "TLbl", "  ✨ Leyley's Premium Cheat V6.19", UDim2.new(1,-100,1,0), UDim2.new(), Enum.TextXAlignment.Left); TLbl.Font=Enum.Font.GothamBold
+local TLbl = Label(TBar, "TLbl", "  ✨ Leyley's Premium Cheat V6.20", UDim2.new(1,-100,1,0), UDim2.new(), Enum.TextXAlignment.Left); TLbl.Font=Enum.Font.GothamBold
 local ClsB = Button(TBar, "ClsB", "X", UDim2.new(0,30,0,30), UDim2.new(1,-35,0,5), SolaraManager.CurrentTheme.Danger, nil)
 local MinB = Button(TBar, "MinB", "-", UDim2.new(0,30,0,30), UDim2.new(1,-70,0,5), SolaraManager.CurrentTheme.Warning, nil)
 
@@ -490,6 +489,15 @@ UserInputService.InputEnded:Connect(function(i, gp)
     elseif i.KeyCode == Enum.KeyCode.D then SolaraManager.FlyCtrl.R=0 end
 end)
 UserInputService.JumpRequest:Connect(function() if SolaraManager.IsInfJump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping) end end)
+
+-- [ ANTI-AFK CORE LOGIC ]
+LocalPlayer.Idled:Connect(function()
+    if SolaraManager.IsAntiAfk then
+        VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        task.wait(1)
+        VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+    end
+end)
 
 -- [ AUTO LOAD INIT ]
 if readfile and isfile and isfile(SolaraManager.ConfigFilename) then
